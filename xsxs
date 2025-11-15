@@ -1,0 +1,350 @@
+-- Obsidian Auto Quest System - Advanced Quest Automation
+
+local repo = 'https://raw.githubusercontent.com/deividcomsono/Obsidian/main/'
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))() local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))() local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
+-- Services local Players = game:GetService('Players') local TweenService = game:GetService('TweenService') local RunService = game:GetService('RunService') local ReplicatedStorage = game:GetService('ReplicatedStorage') local ProximityPromptService = game:GetService('ProximityPromptService')
+
+-- Enhanced SmoothTween System local DEFAULT_INFO = TweenInfo.new( 1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 0, false, 0 )
+
+local EasingMap = { ['linear'] = Enum.EasingStyle.Linear, ['sine'] = Enum.EasingStyle.Sine, ['quad'] = Enum.EasingStyle.Quad, ['quart'] = Enum.EasingStyle.Quart, ['quint'] = Enum.EasingStyle.Quint, ['back'] = Enum.EasingStyle.Back, ['bounce'] = Enum.EasingStyle.Bounce, ['elastic'] = Enum.EasingStyle.Elastic, ['expo'] = Enum.EasingStyle.Exponential, ['exponential'] = Enum.EasingStyle.Exponential, ['circ'] = Enum.EasingStyle.Circular, ['circular'] = Enum.EasingStyle.Circular, ['cubic'] = Enum.EasingStyle.Cubic, }
+
+local DirectionMap = { ['in'] = Enum.EasingDirection.In, ['out'] = Enum.EasingDirection.Out, ['inout'] = Enum.EasingDirection.InOut, }
+
+local function CreateSmoothTween(target, goals, options) options = options or {} local self = {} self.target = target self.goals = goals or {} self.tween = nil self.isPlaying = false self.callbacks = { completed = {} }
+
+local time = options.time or 1 local styleStr = (options.style or 'sine'):lower() local style = EasingMap[styleStr] or DEFAULT_INFO.EasingStyle local directionStr = (options.direction or 'inout'):lower() local direction = DirectionMap[directionStr] or DEFAULT_INFO.EasingDirection
+
+self.tweenInfo = TweenInfo.new(time, style, direction, 0, false, 0)
+
+function self:Play() local success, err = pcall(function() self.tween = TweenService:Create(self.target, self.tweenInfo, self.goals) self.isPlaying = true self.tween:Play() end) return success end
+
+function self:Await() if self.tween then self.tween.Completed:Wait() self.isPlaying = false for _, cb in ipairs(self.callbacks.completed) do pcall(cb) end end end
+
+function self:Cancel() if self.tween then pcall(function() self.tween:Cancel() end) self.isPlaying = false end end
+
+function self:OnCompleted(cb) table.insert(self.callbacks.completed, cb) return self end
+
+return self end
+
+-- Lib Setup local Options = Library.Options local Toggles = Library.Toggles
+
+Library.ForceCheckbox = false Library.ShowToggleFrameInKeybinds = true
+
+local Window = Library:CreateWindow({ Title = 'Auto Quest System', Footer = 'v1.0 - Quest Automation', NotifySide = 'Right', ShowCustomCursor = true, })
+
+local Tabs = { Quest = Window:AddTab('Quest', 'scroll'), Settings = Window:AddTab('Settings', 'sliders'), ['UI Settings'] = Window:AddTab('UI Settings', 'settings'), }
+
+local QuestGroup = Tabs.Quest:AddLeftGroupbox('Quest Selection', 'scroll') local FarmGroup = Tabs.Quest:AddRightGroupbox('Auto Farm', 'zap') local TweenGroup = Tabs.Settings:AddLeftGroupbox('Movement Settings', 'activity') local StatsGroup = Tabs.Settings:AddRightGroupbox('Statistics', 'bar-chart')
+
+-- Core Variables local player = Players.LocalPlayer local character = nil local rootPart = nil local humanoid = nil
+
+-- Quest Configuration local QUESTS = { ['1'] = { name = 'Bandit Quest', npcPath = workspace.Main.NPCs.Quests['1'], targetFolder = workspace.Main.Characters['Windmill Village']:WaitForChild( 'Bandit' ), targetName = 'Bandit', weapon = 'Katana', }, }
+
+local selectedQuest = '1' local currentQuestData = QUESTS['1']
+
+-- Weapon & Attack Settings local ATTACKS_PER_SEC = 10 local attackCooldown = 1 / ATTACKS_PER_SEC local lastAttackTime = 0
+
+-- Farm State local autoQuestEnabled = false local currentlyAttacking = false local hasQuest = false local questThread = nil
+
+-- Tween Settings local tweenSettings = { time = 0.2, style = 'linear', direction = 'inout', yOffset = 3, }
+
+-- Stats local stats = { kills = 0, questsCompleted = 0, startTime = 0, }
+
+-- Remote local Remote = ReplicatedStorage:WaitForChild('Remotes') :WaitForChild('Serverside')
+
+--//////////////////////////////////////////////////////// -- CHARACTER SYSTEM (BULLETPROOF) --//////////////////////////////////////////////////////// local function waitForCharacter() character = player.Character or player.CharacterAdded:Wait() rootPart = character:WaitForChild('HumanoidRootPart') humanoid = character:WaitForChild('Humanoid') return character, rootPart, humanoid end
+
+waitForCharacter()
+
+player.CharacterAdded:Connect(function(char) task.wait(0.5) waitForCharacter() end)
+
+--//////////////////////////////////////////////////////// -- WEAPON EQUIP SYSTEM --//////////////////////////////////////////////////////// local function ensureWeapon() if not character or not currentQuestData then return false end
+
+local weapon = currentQuestData.weapon if character:FindFirstChild(weapon) then return true end
+
+local backpack = player:FindFirstChild('Backpack') if backpack then local tool = backpack:FindFirstChild(weapon) if tool then tool.Parent = character return true end end
+
+return false end
+
+--//////////////////////////////////////////////////////// -- QUEST STATUS CHECK --//////////////////////////////////////////////////////// local function checkQuestStatus() local questUI = player.PlayerGui:FindFirstChild('HUD') if not questUI then return false, '0/0' end
+
+local questBar = questUI:FindFirstChild('Bar') if not questBar then return false, '0/0' end
+
+local questList = questBar:FindFirstChild('List') if not questList then return false, '0/0' end
+
+local questFrame = questList:FindFirstChild('Quest') if not questFrame or not questFrame.Visible then return false, '0/0' end
+
+local bar = questFrame:FindFirstChild('Bar') if not bar then return false, '0/0' end
+
+local label = bar:FindFirstChild('Label2') if not label then return false, '0/0' end
+
+local text = label.Text return true, text end
+
+--//////////////////////////////////////////////////////// -- QUEST GIVER INTERACTION --//////////////////////////////////////////////////////// local function takeQuest() if not currentQuestData or not rootPart then return false end
+
+local questNPC = currentQuestData.npcPath if not questNPC then return false end
+
+local npcRoot = questNPC:FindFirstChild('HumanoidRootPart') if not npcRoot then return false end
+
+-- Move to NPC local tween = CreateSmoothTween(rootPart, { CFrame = CFrame.new(npcRoot.Position + Vector3.new(0, 0, 5)), }, { time = 1, style = 'linear' })
+
+tween:Play() tween:Await()
+
+task.wait(0.5)
+
+-- Find and trigger ProximityPrompt local prompt = questNPC:FindFirstChildOfClass('ProximityPrompt', true) if prompt then -- Simulate E key press for i = 1, 5 do fireproximityprompt(prompt) task.wait(0.1)
+
+    local has, status = checkQuestStatus()
+    if has then
+        Library:Notify('✅ Quest Accepted!', 3)
+        return true
+    end
+end
+end
+
+return false end
+
+--//////////////////////////////////////////////////////// -- POSITION TRACKING CONTROL --//////////////////////////////////////////////////////// local currentTween = nil local positionTrackConnection = nil
+
+local function stopPositionTracking() if positionTrackConnection then positionTrackConnection:Disconnect() positionTrackConnection = nil end end
+
+--//////////////////////////////////////////////////////// -- SAFE TWEEN (INSTANT & DYNAMIC POSITION TRACKING) --//////////////////////////////////////////////////////// local function safeTweenTo(target) if not rootPart or not target then return false end
+
+local hrp = target:FindFirstChild('HumanoidRootPart') if not hrp then return false end
+
+stopPositionTracking()
+
+if currentTween then currentTween:Cancel() currentTween = nil end
+
+local targetPos = hrp.Position + Vector3.new(0, tweenSettings.yOffset, 0) local lookAtPos = hrp.Position
+
+currentTween = CreateSmoothTween(rootPart, { CFrame = CFrame.lookAt(targetPos, lookAtPos), }, { time = tweenSettings.time, style = tweenSettings.style, direction = tweenSettings.direction, })
+
+local success = currentTween:Play() if success then currentTween:Await() end
+
+-- DYNAMIC POSITION TRACKING positionTrackConnection = RunService.Heartbeat:Connect(function() if not target or not rootPart or not autoQuestEnabled then stopPositionTracking() return end
+
+local targetHrp = target:FindFirstChild('HumanoidRootPart')
+if targetHrp then
+    local desiredPos = targetHrp.Position
+        + Vector3.new(0, tweenSettings.yOffset, 0)
+    rootPart.CFrame = CFrame.lookAt(desiredPos, targetHrp.Position)
+else
+    stopPositionTracking()
+end
+end)
+
+return success end
+
+--//////////////////////////////////////////////////////// -- STAY AT NPC (When no quest objective) --//////////////////////////////////////////////////////// local function stayAtNPC() if not currentQuestData or not rootPart then return end
+
+local questNPC = currentQuestData.npcPath if not questNPC then return end
+
+local npcRoot = questNPC:FindFirstChild('HumanoidRootPart') if not npcRoot then return end
+
+-- Position lock near NPC local stayConnection = RunService.Heartbeat:Connect(function() if not autoQuestEnabled or hasQuest then if stayConnection then stayConnection:Disconnect() end return end
+
+if rootPart and npcRoot then
+    local stayPos = npcRoot.Position + Vector3.new(0, 0, 5)
+    rootPart.CFrame = CFrame.new(stayPos)
+end
+end) end
+
+--//////////////////////////////////////////////////////// -- FIND NEAREST TARGET --//////////////////////////////////////////////////////// local function findNearestTarget() if not rootPart or not currentQuestData then return nil end
+
+local targetFolder = currentQuestData.targetFolder if not targetFolder then return nil end
+
+local nearest = nil local minDist = math.huge local myPos = rootPart.Position
+
+for _, mob in ipairs(targetFolder:GetChildren()) do if mob:IsA('Model') then local hrp = mob:FindFirstChild('HumanoidRootPart') local hum = mob:FindFirstChild('Humanoid')
+
+    if hrp and hum and hum.Health > 0 then
+        local dist = (hrp.Position - myPos).Magnitude
+        if dist < minDist then
+            minDist = dist
+            nearest = mob
+        end
+    end
+end
+end
+
+return nearest end
+
+--//////////////////////////////////////////////////////// -- AUTO ATTACK SYSTEM --//////////////////////////////////////////////////////// RunService.Heartbeat:Connect(function(dt) if not currentlyAttacking or not autoQuestEnabled or not currentQuestData then return end
+
+lastAttackTime = lastAttackTime + dt
+
+while lastAttackTime >= attackCooldown do lastAttackTime = lastAttackTime - attackCooldown
+
+if ensureWeapon() then
+    pcall(function()
+        Remote:FireServer(
+            'Server',
+            'Sword',
+            'M1s',
+            currentQuestData.weapon,
+            3
+        )
+    end)
+end
+end end)
+
+--//////////////////////////////////////////////////////// -- MAIN AUTO QUEST LOOP --//////////////////////////////////////////////////////// local function autoQuestLoop() stats.startTime = tick() stats.kills = 0 stats.questsCompleted = 0
+
+while autoQuestEnabled do -- Character check if not character or not rootPart or not humanoid or humanoid.Health <= 0 then waitForCharacter() task.wait(0.3) continue end
+
+ensureWeapon()
+
+-- Check quest status
+local hasActiveQuest, questStatus = checkQuestStatus()
+hasQuest = hasActiveQuest
+
+if not hasActiveQuest then
+    -- No quest - take quest
+    stopPositionTracking()
+    currentlyAttacking = false
+
+    Library:Notify('📜 Taking quest...', 2)
+    local success = takeQuest()
+
+    if success then
+        hasQuest = true
+        task.wait(0.5)
+    else
+        -- Stay at NPC if can't take quest
+        stayAtNPC()
+        task.wait(1)
+    end
+    continue
+end
+
+-- Check if quest completed (e.g., "5/5")
+local current, total = questStatus:match('(%d+)/(%d+)')
+if current and total and tonumber(current) >= tonumber(total) then
+    -- Quest complete - turn in
+    stopPositionTracking()
+    currentlyAttacking = false
+
+    Library:Notify('✅ Quest Complete! Turning in...', 3)
+
+    local turned = takeQuest() -- Turn in at NPC
+    if turned then
+        stats.questsCompleted = stats.questsCompleted + 1
+        hasQuest = false
+    end
+
+    task.wait(1)
+    continue
+end
+
+-- Has quest - farm targets
+local target = findNearestTarget()
+if not target then
+    task.wait(0.1)
+    continue
+end
+
+-- Move to target
+local moved = safeTweenTo(target)
+if not moved then
+    task.wait(0.1)
+    continue
+end
+
+-- Attack
+currentlyAttacking = true
+
+local targetHumanoid = target:FindFirstChild('Humanoid')
+while
+    autoQuestEnabled
+    and target
+    and targetHumanoid
+    and targetHumanoid.Health > 0
+do
+    task.wait(0.03)
+end
+
+-- Target dead
+currentlyAttacking = false
+stopPositionTracking()
+stats.kills = stats.kills + 1
+end
+
+currentlyAttacking = false stopPositionTracking() end
+
+--//////////////////////////////////////////////////////// -- UI: QUEST SELECTION --//////////////////////////////////////////////////////// QuestGroup:AddDropdown('QuestSelect', { Values = { '1 - Bandit Quest' }, Default = 1, Multi = false, Text = 'Select Quest', Tooltip = 'Choose which quest to auto-complete', Callback = function(value) selectedQuest = value:match('^(%d+)') currentQuestData = QUESTS[selectedQuest] Library:Notify('Quest selected: ' .. currentQuestData.name, 2) end, })
+
+QuestGroup:AddDivider() QuestGroup:AddLabel('Quest Info:') QuestGroup:AddLabel('Target: Bandit (Windmill Village)') QuestGroup:AddLabel('Weapon: Katana')
+
+--//////////////////////////////////////////////////////// -- UI: AUTO FARM TOGGLE --//////////////////////////////////////////////////////// FarmGroup:AddToggle('AutoQuestToggle', { Text = 'Enable Auto Quest', Tooltip = 'Automatically takes, completes, and turns in quests', Default = false, Callback = function(value) autoQuestEnabled = value
+
+if value then
+    waitForCharacter()
+    ensureWeapon()
+
+    questThread = task.spawn(autoQuestLoop)
+    Library:Notify('🚀 Auto Quest Started!', 3)
+else
+    if questThread then
+        task.cancel(questThread)
+        questThread = nil
+    end
+
+    currentlyAttacking = false
+    stopPositionTracking()
+    Library:Notify('⏸️ Auto Quest Stopped!', 3)
+end
+end, })
+
+FarmGroup:AddDivider() FarmGroup:AddButton({ Text = 'Reset Character', Tooltip = 'Respawn your character', Func = function() if humanoid then humanoid.Health = 0 end end, })
+
+--//////////////////////////////////////////////////////// -- UI: TWEEN SETTINGS --//////////////////////////////////////////////////////// TweenGroup:AddSlider('TweenDuration', { Text = 'Movement Speed', Tooltip = 'Time to reach target (0.1 - 1 seconds)', Default = 0.2, Min = 0.1, Max = 1, Rounding = 1, Compact = false, Callback = function(value) tweenSettings.time = value end, })
+
+TweenGroup:AddDropdown('TweenStyle', { Values = { 'Linear', 'Sine', 'Quad', 'Quart', 'Quint', 'Back', 'Bounce', 'Elastic', 'Expo', 'Circ', 'Cubic', }, Default = 1, Multi = false, Text = 'Easing Style', Callback = function(value) tweenSettings.style = value:lower() end, })
+
+TweenGroup:AddDropdown('TweenDirection', { Values = { 'In', 'Out', 'InOut' }, Default = 3, Multi = false, Text = 'Easing Direction', Callback = function(value) tweenSettings.direction = value:lower() end, })
+
+TweenGroup:AddDivider()
+
+TweenGroup:AddSlider('YOffset', { Text = 'Height Offset', Tooltip = 'Height above target (0 - 10 studs)', Default = 3, Min = 0, Max = 10, Rounding = 1, Compact = false, Callback = function(value) tweenSettings.yOffset = value end, })
+
+--//////////////////////////////////////////////////////// -- UI: STATISTICS --//////////////////////////////////////////////////////// local killsLabel = StatsGroup:AddLabel('Kills: 0') local questsLabel = StatsGroup:AddLabel('Quests Completed: 0') local timeLabel = StatsGroup:AddLabel('Time: 0m 0s') local qphLabel = StatsGroup:AddLabel('QPH: 0')
+
+task.spawn(function() while task.wait(1) do if autoQuestEnabled and stats.startTime > 0 then local elapsed = tick() - stats.startTime local minutes = math.floor(elapsed / 60) local seconds = math.floor(elapsed % 60) local qph = stats.questsCompleted > 0 and math.floor((stats.questsCompleted / elapsed) * 3600) or 0
+
+    killsLabel:SetText(string.format('Kills: %d', stats.kills))
+    questsLabel:SetText(
+        string.format('Quests Completed: %d', stats.questsCompleted)
+    )
+    timeLabel:SetText(string.format('Time: %dm %ds', minutes, seconds))
+    qphLabel:SetText(string.format('QPH: %d', qph))
+end
+
+if Library.Unloaded then
+    break
+end
+end end)
+
+StatsGroup:AddDivider() StatsGroup:AddButton({ Text = 'Reset Stats', Func = function() stats.kills = 0 stats.questsCompleted = 0 stats.startTime = tick() killsLabel:SetText('Kills: 0') questsLabel:SetText('Quests Completed: 0') timeLabel:SetText('Time: 0m 0s') qphLabel:SetText('QPH: 0') end, })
+
+--//////////////////////////////////////////////////////// -- UI SETTINGS --//////////////////////////////////////////////////////// local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu', 'wrench')
+
+MenuGroup:AddToggle('KeybindMenuOpen', { Default = Library.KeybindFrame.Visible, Text = 'Keybind Menu', Callback = function(v) Library.KeybindFrame.Visible = v end, })
+
+MenuGroup:AddToggle('ShowCustomCursor', { Text = 'Custom Cursor', Default = true, Callback = function(v) Library.ShowCustomCursor = v end, })
+
+MenuGroup:AddDropdown('NotificationSide', { Values = { 'Left', 'Right' }, Default = 2, Text = 'Notification Side', Callback = function(v) Library:SetNotifySide(v) end, })
+
+MenuGroup:AddDropdown('DPIDropdown', { Values = { '50%', '75%', '100%', '125%', '150%', '175%', '200%' }, Default = 3, Text = 'DPI Scale', Callback = function(v) local DPI = tonumber(v:gsub('%%', '')) Library:SetDPIScale(DPI) end, })
+
+MenuGroup:AddDivider() MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'RightShift', NoUI = true, Text = 'Menu keybind', })
+
+MenuGroup:AddButton({ Text = 'Unload', Func = function() Library:Unload() end, })
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+ThemeManager:SetLibrary(Library) SaveManager:SetLibrary(Library) SaveManager:IgnoreThemeSettings() SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) ThemeManager:SetFolder('Obsidian') SaveManager:SetFolder('Obsidian/AutoQuest') SaveManager:BuildConfigSection(Tabs['UI Settings']) ThemeManager:ApplyToTab(Tabs['UI Settings']) SaveManager:LoadAutoloadConfig()
+
+Library:OnUnload(function() autoQuestEnabled = false currentlyAttacking = false stopPositionTracking() if currentTween then currentTween:Cancel() end print('Auto Quest Unloaded!') end)
