@@ -8213,12 +8213,13 @@ function Library:CreateCommandBar(Config)
     end
 
     local TitleBar = New("Frame", {
-        BackgroundColor3 = "MainColor",
-        Size = UDim2.new(1, 0, 0, 36),
+        BackgroundColor3 = "BackgroundColor",
+        BackgroundTransparency = 0.5,
+        Size = UDim2.new(1, 0, 0, 42),
         Parent = Main
     })
     Library:MakeLine(Main, {
-        Position = UDim2.fromOffset(0, 36),
+        Position = UDim2.fromOffset(0, 42),
         Size = UDim2.new(1, 0, 0, 1),
         ZIndex = 2
     })
@@ -8235,8 +8236,8 @@ function Library:CreateCommandBar(Config)
     
     local SearchHolder = New("Frame", {
         BackgroundColor3 = "MainColor",
-        Position = UDim2.fromOffset(8, 44),
-        Size = UDim2.new(1, -16, 0, 30),
+        Position = UDim2.fromOffset(12, 54),
+        Size = UDim2.new(1, -24, 0, 34),
         Parent = Main
     })
     New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = SearchHolder })
@@ -8249,8 +8250,8 @@ function Library:CreateCommandBar(Config)
 
     local QLbl = New("TextLabel", {
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(26, 30),
-        Text = "Q",
+        Size = UDim2.fromOffset(30, 34),
+        Text = ">",
         TextColor3 = Library.Scheme.AccentColor,
         TextSize = 14,
         Parent = SearchHolder
@@ -8277,9 +8278,10 @@ function Library:CreateCommandBar(Config)
 
     local ListScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 80),
-        Size = UDim2.new(1, 0, 1, -116),
-        ScrollBarThickness = 3,
+        Position = UDim2.fromOffset(0, 96),
+        Size = UDim2.new(1, 0, 1, -138),
+        ScrollBarThickness = 2,
+        ScrollBarImageTransparency = 0.5,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
@@ -8300,10 +8302,11 @@ function Library:CreateCommandBar(Config)
     })
 
     local InputBar = New("Frame", {
-        BackgroundColor3 = "MainColor",
+        BackgroundColor3 = "BackgroundColor",
+        BackgroundTransparency = 0.5,
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, 36),
+        Size = UDim2.new(1, 0, 0, 42),
         Parent = Main
     })
 
@@ -8347,7 +8350,7 @@ function Library:CreateCommandBar(Config)
         
         local wrapper = New("Frame", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 52),
+            Size = UDim2.new(1, 0, 0, 46),
             LayoutOrder = order,
             Name = table.concat(Names, "|"),
             ClipsDescendants = true,
@@ -8362,10 +8365,10 @@ function Library:CreateCommandBar(Config)
         })
 
         rowBG.MouseEnter:Connect(function()
-            TweenService:Create(rowBG, Library.TweenInfo, { BackgroundTransparency = 0.92 }):Play()
+            TweenService:Create(rowBG, Library.TweenInfo, { BackgroundTransparency = 0.85, BackgroundColor3 = Library.Scheme.AccentColor }):Play()
         end)
         rowBG.MouseLeave:Connect(function()
-            TweenService:Create(rowBG, Library.TweenInfo, { BackgroundTransparency = 1 }):Play()
+            TweenService:Create(rowBG, Library.TweenInfo, { BackgroundTransparency = 1, BackgroundColor3 = Color3.new(1, 1, 1) }):Play()
         end)
 
         Library:MakeLine(wrapper, {
