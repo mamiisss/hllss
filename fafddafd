@@ -8399,25 +8399,56 @@ function Library:CreateCommandBar(Config)
         descLbl.TextColor3 = Library:GetDarkerColor(Library.Scheme.FontColor)
         
         local badgeColor = BADGE_COLORS[entry.badge] or BADGE_COLORS.OTHER
-        local badge = New("TextButton", {
+        
+        -- Badge container (pill shape, auto-width)
+        local badgeHolder = New("Frame", {
             AnchorPoint = Vector2.new(1, 0.5),
-            BackgroundColor3 = "BackgroundColor",
-            Size = UDim2.fromOffset(58, 20),
-            Position = UDim2.new(1, -10, 0.5, 0),
+            BackgroundColor3 = badgeColor,
+            BackgroundTransparency = 0.85,
+            AutomaticSize = Enum.AutomaticSize.X,
+            Size = UDim2.fromOffset(0, 22),
+            Position = UDim2.new(1, -8, 0.5, 0),
+            Parent = wrapper
+        })
+        New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = badgeHolder })
+        New("UIPadding", {
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            Parent = badgeHolder
+        })
+        
+        -- Colored left accent bar inside badge
+        local badgeAccent = New("Frame", {
+            BackgroundColor3 = badgeColor,
+            Size = UDim2.new(0, 2, 0.6, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
+            Position = UDim2.new(0, -5, 0.5, 0),
+            Parent = badgeHolder
+        })
+        New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = badgeAccent })
+        
+        -- Badge text
+        local badgeLbl = New("TextLabel", {
+            BackgroundTransparency = 1,
+            AutomaticSize = Enum.AutomaticSize.X,
+            Size = UDim2.new(0, 0, 1, 0),
             Text = "<b>" .. string.upper(entry.badge) .. "</b>",
             RichText = true,
             TextColor3 = badgeColor,
-            TextSize = 11,
-            Parent = wrapper
+            TextSize = 10,
+            Parent = badgeHolder
         })
-        New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = badge })
-        Library:AddOutline(badge)
         
-        badge.MouseEnter:Connect(function()
-            TweenService:Create(badge, Library.TweenInfo, { BackgroundColor3 = Library:GetLighterColor(Library.Scheme.BackgroundColor) }):Play()
+        -- Hover effect
+        badgeHolder.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                TweenService:Create(badgeHolder, Library.TweenInfo, { BackgroundTransparency = 0.7 }):Play()
+            end
         end)
-        badge.MouseLeave:Connect(function()
-            TweenService:Create(badge, Library.TweenInfo, { BackgroundColor3 = Library.Scheme.BackgroundColor }):Play()
+        badgeHolder.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                TweenService:Create(badgeHolder, Library.TweenInfo, { BackgroundTransparency = 0.85 }):Play()
+            end
         end)
         
         local function fillSearch()
