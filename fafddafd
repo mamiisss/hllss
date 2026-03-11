@@ -8402,28 +8402,26 @@ function Library:CreateCommandBar(Config)
         
         local badge = New("TextButton", {
             AnchorPoint = Vector2.new(1, 0.5),
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
+            BackgroundColor3 = badgeColor,
+            BackgroundTransparency = 1,
             Size = UDim2.fromOffset(0, 20),
             AutomaticSize = Enum.AutomaticSize.X,
             Position = UDim2.new(1, -8, 0.5, 0),
             Text = "",
-            ClipsDescendants = true,
             Parent = wrapper
         })
+        New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = badge })
         New("UIPadding", {
-            PaddingLeft = UDim.new(0, 6),
-            PaddingRight = UDim.new(0, 6),
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
             Parent = badge
         })
         
-        -- Bottom color bar
-        New("Frame", {
-            AnchorPoint = Vector2.new(0.5, 1),
-            BackgroundColor3 = badgeColor,
-            Size = UDim2.new(1, 0, 0, 2),
-            Position = UDim2.new(0.5, 0, 1, 0),
+        -- Ghost border in badge color
+        local badgeStroke = New("UIStroke", {
+            Color = badgeColor,
+            Thickness = 1,
+            Transparency = 0.5,
             Parent = badge
         })
         
@@ -8432,20 +8430,19 @@ function Library:CreateCommandBar(Config)
             AutomaticSize = Enum.AutomaticSize.X,
             Size = UDim2.fromScale(0, 1),
             Text = entry.badge:sub(1,1) .. entry.badge:sub(2):lower(),
+            TextColor3 = badgeColor,
             TextSize = 11,
             TextXAlignment = Enum.TextXAlignment.Center,
             Parent = badge
         })
         
         badge.MouseEnter:Connect(function()
-            TweenService:Create(badge, Library.TweenInfo, {
-                BackgroundColor3 = Library:GetBetterColor(Library.Scheme.MainColor, 10)
-            }):Play()
+            TweenService:Create(badge, Library.TweenInfo, { BackgroundTransparency = 0.85 }):Play()
+            TweenService:Create(badgeStroke, Library.TweenInfo, { Transparency = 0.2 }):Play()
         end)
         badge.MouseLeave:Connect(function()
-            TweenService:Create(badge, Library.TweenInfo, {
-                BackgroundColor3 = Library.Scheme.MainColor
-            }):Play()
+            TweenService:Create(badge, Library.TweenInfo, { BackgroundTransparency = 1 }):Play()
+            TweenService:Create(badgeStroke, Library.TweenInfo, { Transparency = 0.5 }):Play()
         end)
         
         local function fillSearch()
