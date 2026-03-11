@@ -8455,7 +8455,11 @@ function Library:CreateCommandBar(Config)
             SearchBox.Text = entry.names[1]
             SearchBox:CaptureFocus()
         end
-        badge.MouseButton1Click:Connect(fillSearch)
+        badgeHolder.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                fillSearch()
+            end
+        end)
         rowBG.MouseButton1Click:Connect(fillSearch)
 
         table.insert(CommandBar.RowEntries, {wrapper = wrapper, entry = entry})
