@@ -8258,7 +8258,7 @@ function Library:CreateCommandBar(Config)
     
     local SearchBox = New("TextBox", {
         BackgroundTransparency = 1,
-        PlaceholderText = "Komut ara...",
+        PlaceholderText = "Search command...",
         Position = UDim2.fromOffset(24, 0),
         Size = UDim2.new(1, -28, 1, 0),
         Text = "",
@@ -8318,7 +8318,7 @@ function Library:CreateCommandBar(Config)
 
     local CmdInput = New("TextBox", {
         BackgroundTransparency = 1,
-        PlaceholderText = "komut yaz ve Enter'a bas...",
+        PlaceholderText = "Type a command and press Enter...",
         Position = UDim2.fromOffset(24, 0),
         Size = UDim2.new(1, -28, 1, 0),
         Text = "",
@@ -8404,7 +8404,8 @@ function Library:CreateCommandBar(Config)
             BackgroundColor3 = "BackgroundColor",
             Size = UDim2.fromOffset(58, 20),
             Position = UDim2.new(1, -10, 0.5, 0),
-            Text = entry.badge,
+            Text = "<b>" .. string.upper(entry.badge) .. "</b>",
+            RichText = true,
             TextColor3 = badgeColor,
             TextSize = 11,
             Parent = wrapper
@@ -8454,7 +8455,7 @@ function Library:CreateCommandBar(Config)
         for w in raw:gmatch("%S+") do parts[#parts+1] = w end
         local name = table.remove(parts, 1):lower()
         local cmd = CommandBar.Commands[name]
-        if not cmd then return false, 'Bilinmeyen komut: "' .. name .. '"' end
+        if not cmd then return false, 'Unknown command: "' .. name .. '"' end
         return cmd.fn(parts)
     end
 
@@ -8463,9 +8464,9 @@ function Library:CreateCommandBar(Config)
         local ok, msg = RunCmd(val)
         if ok == nil then return end
         if ok then
-            Library:Notify(msg or "Komut calisti", 3.5)
+            Library:Notify(msg or "Command executed", 3.5)
         else
-            Library:Notify(msg or "Hata", 3.5)
+            Library:Notify(msg or "Error", 3.5)
         end
     end
 
@@ -8484,9 +8485,9 @@ function Library:CreateCommandBar(Config)
         if cmd then
             local ok, msg = RunCmd(raw)
             if ok then
-                Library:Notify(msg or "Tamam", 3.5)
+                Library:Notify(msg or "Success", 3.5)
             else
-                Library:Notify(msg or "Hata", 3.5)
+                Library:Notify(msg or "Error", 3.5)
             end
             SearchBox.Text = ""
         end
