@@ -8409,20 +8409,21 @@ function Library:CreateCommandBar(Config)
             AutomaticSize = Enum.AutomaticSize.X,
             Position = UDim2.new(1, -8, 0.5, 0),
             Text = "",
+            ClipsDescendants = true,
             Parent = wrapper
         })
         New("UIPadding", {
-            PaddingLeft = UDim.new(0, 14),
+            PaddingLeft = UDim.new(0, 6),
             PaddingRight = UDim.new(0, 6),
             Parent = badge
         })
         
-        -- Category color dot
+        -- Bottom color bar
         New("Frame", {
-            AnchorPoint = Vector2.new(0, 0.5),
+            AnchorPoint = Vector2.new(0.5, 1),
             BackgroundColor3 = badgeColor,
-            Size = UDim2.fromOffset(6, 6),
-            Position = UDim2.new(0, -10, 0.5, 0),
+            Size = UDim2.new(1, 0, 0, 2),
+            Position = UDim2.new(0.5, 0, 1, 0),
             Parent = badge
         })
         
@@ -8430,9 +8431,9 @@ function Library:CreateCommandBar(Config)
             BackgroundTransparency = 1,
             AutomaticSize = Enum.AutomaticSize.X,
             Size = UDim2.fromScale(0, 1),
-            Text = entry.badge,
-            TextSize = 12,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            Text = entry.badge:sub(1,1) .. entry.badge:sub(2):lower(),
+            TextSize = 11,
+            TextXAlignment = Enum.TextXAlignment.Center,
             Parent = badge
         })
         
