@@ -8282,7 +8282,7 @@ function Library:CreateCommandBar(Config)
         BackgroundTransparency = 1,
         Size = UDim2.fromOffset(26, 30),
         Text = "Q",
-        TextColor3 = "AccentColor",
+        TextColor3 = Library.Scheme.AccentColor,
         TextSize = 14,
         Parent = SearchHolder
     })
@@ -8342,7 +8342,7 @@ function Library:CreateCommandBar(Config)
         BackgroundTransparency = 1,
         Size = UDim2.fromOffset(24, 36),
         Text = "&gt;",
-        TextColor3 = "AccentColor",
+        TextColor3 = Library.Scheme.AccentColor,
         TextSize = 14,
         Parent = InputBar
     })
