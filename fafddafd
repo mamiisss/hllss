@@ -8191,16 +8191,14 @@ function Library:CreateCommandBar(Config)
     }
 
     local Main = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
+        BackgroundTransparency = 1,
         Position = UDim2.fromOffset(6, 6),
         Size = UDim2.fromOffset(Config.Width, Config.Height),
         Active = true,
-        ClipsDescendants = true,
+        ClipsDescendants = false,
         Visible = false,
         Parent = Library.ScreenGui
     })
-    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = Main })
-    Library:AddOutline(Main)
     Library:MakeDraggable(Main, Main, true)
 
     local MainScale = New("UIScale", {
@@ -8215,14 +8213,28 @@ function Library:CreateCommandBar(Config)
         Parent = Main
     })
     
-    -- Function to reparent children into CanvasGroup except UI components that govern the Main frame
-    task.spawn(function()
-        for _, child in ipairs(Main:GetChildren()) do
-            if not child:IsA("UICorner") and not child:IsA("UIStroke") and child ~= MainScale and child ~= MainGroup then
-                child.Parent = MainGroup
-            end
-        end
-    end)
+    -- The Top visual frame containing search and list
+    local TopFrame = New("Frame", {
+        BackgroundColor3 = "BackgroundColor",
+        Size = UDim2.new(1, 0, 1, -44), -- leave 44px for gap and InputBar
+        ClipsDescendants = true,
+        Parent = MainGroup
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = TopFrame })
+    Library:AddOutline(TopFrame)
+    Library:MakeDraggable(TopFrame, Main, true)
+
+    -- The Bottom visual frame containing the command input area
+    local InputBar = New("Frame", {
+        BackgroundColor3 = "BackgroundColor",
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.fromScale(0, 1),
+        Size = UDim2.new(1, 0, 0, 36),
+        ClipsDescendants = true,
+        Parent = MainGroup
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = InputBar })
+    Library:AddOutline(InputBar)
 
     function CommandBar:Toggle(State)
         if type(State) == "boolean" then
@@ -8252,9 +8264,9 @@ function Library:CreateCommandBar(Config)
     local TitleBar = New("Frame", {
         BackgroundColor3 = "MainColor",
         Size = UDim2.new(1, 0, 0, 36),
-        Parent = Main
+        Parent = TopFrame
     })
-    Library:MakeLine(Main, {
+    Library:MakeLine(TopFrame, {
         Position = UDim2.fromOffset(0, 36),
         Size = UDim2.new(1, 0, 0, 1),
         ZIndex = 2
@@ -8274,7 +8286,7 @@ function Library:CreateCommandBar(Config)
         BackgroundColor3 = "MainColor",
         Position = UDim2.fromOffset(8, 44),
         Size = UDim2.new(1, -16, 0, 30),
-        Parent = Main
+        Parent = TopFrame
     })
     New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = SearchHolder })
     local SStroke = New("UIStroke", {
@@ -8315,33 +8327,18 @@ function Library:CreateCommandBar(Config)
     local ListScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 80),
-        Size = UDim2.new(1, 0, 1, -116),
+        Size = UDim2.new(1, 0, 1, -80),
         ScrollBarThickness = 3,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        Parent = Main
+        Parent = TopFrame
     })
     ListScroll.ScrollBarImageColor3 = Library.Scheme.AccentColor
 
     local listLayout = New("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = ListScroll
-    })
-
-    local bottomLine = Library:MakeLine(Main, {
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 0, 1, -36),
-        Size = UDim2.new(1, 0, 0, 1),
-        ZIndex = 2
-    })
-
-    local InputBar = New("Frame", {
-        BackgroundColor3 = "MainColor",
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, 36),
-        Parent = Main
     })
 
     local promptLbl = New("TextLabel", {
