@@ -8272,41 +8272,50 @@ function Library:CreateCommandBar(Config)
         RichText = true,
         Parent = TitleBar
     })
-    
-    local SearchHolder = New("Frame", {
+      local SearchBox = New("TextBox", {
         BackgroundColor3 = "MainColor",
+        PlaceholderText = "Search...",
         Position = UDim2.fromOffset(8, 44),
         Size = UDim2.new(1, -16, 0, 30),
-        Parent = MainGroup
-    })
-    New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = SearchHolder })
-    local SStroke = New("UIStroke", {
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Color = "OutlineColor",
-        Thickness = 1,
-        Parent = SearchHolder
-    })
-
-    local QLbl = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(26, 30),
-        Text = "Q",
-        TextColor3 = "AccentColor",
-        TextSize = 14,
-        Parent = SearchHolder
-    })
-    
-    local SearchBox = New("TextBox", {
-        BackgroundTransparency = 1,
-        PlaceholderText = "Search command...",
-        Position = UDim2.fromOffset(24, 0),
-        Size = UDim2.new(1, -28, 1, 0),
         Text = "",
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         ClearTextOnFocus = false,
-        Parent = SearchHolder
+        Parent = MainGroup
     })
+    
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = SearchBox })
+    
+    local SStroke = New("UIStroke", {
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        Color = "OutlineColor",
+        Thickness = 1,
+        Parent = SearchBox
+    })
+
+    New("UIPadding", {
+        PaddingBottom = UDim.new(0, 0),
+        PaddingLeft = UDim.new(0, 30),
+        PaddingRight = UDim.new(0, 8),
+        PaddingTop = UDim.new(0, 0),
+        Parent = SearchBox
+    })
+
+    local SearchIcon = Library:GetIcon("search")
+    if SearchIcon then
+        New("ImageLabel", {
+            BackgroundTransparency = 1,
+            Image = SearchIcon.Url,
+            ImageColor3 = "FontColor",
+            ImageRectOffset = SearchIcon.ImageRectOffset,
+            ImageRectSize = SearchIcon.ImageRectSize,
+            ImageTransparency = 0.5,
+            AnchorPoint = Vector2.new(0, 0.5),
+            Position = UDim2.new(0, -22, 0.5, 0),
+            Size = UDim2.fromOffset(16, 16),
+            Parent = SearchBox
+        })
+    end
 
     -- The horizontal cut below the Search (the red line user drew)
     Library:MakeLine(MainGroup, {
@@ -8316,10 +8325,10 @@ function Library:CreateCommandBar(Config)
     })
 
     SearchBox.Focused:Connect(function()
-        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme.AccentColor }):Play()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = "AccentColor" }):Play()
     end)
     SearchBox.FocusLost:Connect(function()
-        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme.OutlineColor }):Play()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = "OutlineColor" }):Play()
     end)
 
     local ListScroll = New("ScrollingFrame", {
