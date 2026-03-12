@@ -8214,6 +8214,7 @@ function Library:CreateCommandBar(Config)
         GroupTransparency = 0,
         Parent = Main
     })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = MainGroup })
     
     -- Function to reparent children into CanvasGroup except UI components that govern the Main frame
     task.spawn(function()
@@ -8267,6 +8268,7 @@ function Library:CreateCommandBar(Config)
         Text = "<b>" .. Config.Title .. "</b>",
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Parent = TitleBar
     })
     
@@ -8279,7 +8281,7 @@ function Library:CreateCommandBar(Config)
     New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = SearchHolder })
     local SStroke = New("UIStroke", {
         ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Color = Library.Scheme.OutlineColor,
+        Color = "OutlineColor",
         Thickness = 1,
         Parent = SearchHolder
     })
@@ -8288,7 +8290,7 @@ function Library:CreateCommandBar(Config)
         BackgroundTransparency = 1,
         Size = UDim2.fromOffset(26, 30),
         Text = "Q",
-        TextColor3 = Library.Scheme.AccentColor,
+        TextColor3 = "AccentColor",
         TextSize = 14,
         Parent = SearchHolder
     })
@@ -8327,9 +8329,9 @@ function Library:CreateCommandBar(Config)
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
+        ScrollBarImageColor3 = "AccentColor",
         Parent = MainGroup
     })
-    ListScroll.ScrollBarImageColor3 = Library.Scheme.AccentColor
 
     local listLayout = New("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -8362,8 +8364,9 @@ function Library:CreateCommandBar(Config)
         BackgroundTransparency = 1,
         Size = UDim2.fromOffset(24, 36),
         Text = "&gt;",
-        TextColor3 = Library.Scheme.AccentColor,
+        TextColor3 = "AccentColor",
         TextSize = 14,
+        RichText = true,
         Parent = InputBar
     })
 
@@ -8406,6 +8409,7 @@ function Library:CreateCommandBar(Config)
         })
 
         local rowBG = New("TextButton", {
+            BackgroundColor3 = "FontColor",
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1, 1),
             Text = "",
@@ -8433,6 +8437,7 @@ function Library:CreateCommandBar(Config)
             Size = UDim2.new(1, -80, 0, 18),
             Text = "<b>" .. entry.nameStr .. "</b>",
             TextSize = 13,
+            RichText = true,
             Parent = wrapper
         })
 
@@ -8445,9 +8450,9 @@ function Library:CreateCommandBar(Config)
             Text = entry.desc,
             TextSize = 11,
             RichText = false,
+            TextTransparency = 0.5,
             Parent = wrapper
         })
-        descLbl.TextColor3 = Library:GetDarkerColor(Library.Scheme.FontColor)
         
         local function fillSearch()
             SearchBox.Text = entry.names[1]
