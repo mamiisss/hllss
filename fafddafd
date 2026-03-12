@@ -8213,10 +8213,10 @@ function Library:CreateCommandBar(Config)
         Parent = Main
     })
     
-    -- The Top visual frame containing search and list
+    -- The Top visual frame containing search only
     local TopFrame = New("Frame", {
         BackgroundColor3 = "BackgroundColor",
-        Size = UDim2.new(1, 0, 1, -44), -- leave 44px for gap and InputBar
+        Size = UDim2.new(1, 0, 0, 80), -- 36px title + 44px search area
         ClipsDescendants = true,
         Parent = MainGroup
     })
@@ -8224,17 +8224,32 @@ function Library:CreateCommandBar(Config)
     Library:AddOutline(TopFrame)
     Library:MakeDraggable(TopFrame, Main, true)
 
-    -- The Bottom visual frame containing the command input area
-    local InputBar = New("Frame", {
+    -- The Bottom visual frame containing the command list and input area
+    local MidFrame = New("Frame", {
         BackgroundColor3 = "BackgroundColor",
+        Position = UDim2.fromOffset(0, 88), -- 8px gap
+        Size = UDim2.new(1, 0, 1, -88), -- full height minus TopFrame(80) + Gap(8)
+        ClipsDescendants = true,
+        Parent = MainGroup
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = MidFrame })
+    Library:AddOutline(MidFrame)
+
+    local InputBar = New("Frame", {
+        BackgroundTransparency = 1,
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.fromScale(0, 1),
         Size = UDim2.new(1, 0, 0, 36),
         ClipsDescendants = true,
-        Parent = MainGroup
+        Parent = MidFrame
     })
-    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = InputBar })
-    Library:AddOutline(InputBar)
+
+    local inputSeparator = Library:MakeLine(MidFrame, {
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.new(0, 0, 1, -36),
+        Size = UDim2.new(1, 0, 0, 1),
+        ZIndex = 2
+    })
 
     function CommandBar:Toggle(State)
         if type(State) == "boolean" then
@@ -8326,13 +8341,13 @@ function Library:CreateCommandBar(Config)
 
     local ListScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 80),
-        Size = UDim2.new(1, 0, 1, -80),
+        Position = UDim2.fromOffset(0, 0),
+        Size = UDim2.new(1, 0, 1, -36),
         ScrollBarThickness = 3,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        Parent = TopFrame
+        Parent = MidFrame
     })
     ListScroll.ScrollBarImageColor3 = Library.Scheme.AccentColor
 
