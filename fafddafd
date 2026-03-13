@@ -8292,7 +8292,7 @@ function Library:CreateCommandBar(Config)
         Size = UDim2.new(1, -16, 0, 30),
         Text = "",
         TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Center,
+        TextXAlignment = Enum.TextXAlignment.Left,
         ClearTextOnFocus = false,
         Parent = MainGroup
     })
@@ -8487,25 +8487,18 @@ function Library:CreateCommandBar(Config)
             local accent = Library.Scheme["AccentColor"]
             local badge = New("TextLabel", {
                 BackgroundColor3 = accent,
-                BackgroundTransparency = 0.15,
+                BackgroundTransparency = 0,
                 AnchorPoint = Vector2.new(1, 0.5),
                 Position = UDim2.new(1, -10, 0.5, 0),
-                Size = UDim2.fromOffset(56, 20),
+                Size = UDim2.fromOffset(58, 22),
                 Text = badgeKey,
-                TextColor3 = accent,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
                 TextSize = 10,
                 Font = Enum.Font.GothamBold,
                 RichText = false,
                 Parent = wrapper
             })
             New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = badge })
-            New("UIStroke", {
-                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                Color = accent,
-                Transparency = 0.6,
-                Thickness = 1,
-                Parent = badge
-            })
         end
         
         local function fillSearch()
