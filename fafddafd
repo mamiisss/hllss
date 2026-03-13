@@ -8192,9 +8192,17 @@ function Library:CreateCommandBar(Config)
     }
 
     local badgeTweenIn    = TweenInfo.new(0.2,  Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-    local badgeTweenOut   = TweenInfo.new(0.3,  Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    local badgeTweenOut   = TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     local badgeTweenClick = TweenInfo.new(0.08, Enum.EasingStyle.Quad,  Enum.EasingDirection.Out)
-    local badgePulseTween = TweenInfo.new(0.5,  Enum.EasingStyle.Sine,  Enum.EasingDirection.InOut)
+
+    local function playShimmer(gradient)
+        gradient.Offset = Vector2.new(-1, 0)
+        TweenService:Create(gradient, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {
+            Offset = Vector2.new(1, 0)
+        }):Play()
+    end
+
+    local _shimmerLoopConn = nil
 
     local Main = New("Frame", {
         BackgroundColor3 = "BackgroundColor",
@@ -8493,6 +8501,8 @@ function Library:CreateCommandBar(Config)
         local badgeGlow = nil
         local badgeLabel = nil
         local badgeScale = nil
+        local badgeCorner = nil
+        local shimmerGrad = nil
         if badgeKey ~= "OTHER" then
             local badgeColor = BADGE_COLORS[badgeKey] or BADGE_COLORS.OTHER
 
@@ -8504,12 +8514,12 @@ function Library:CreateCommandBar(Config)
                 Size = UDim2.fromOffset(0, 0),
                 Parent = wrapper
             })
-            New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = badgeHolder })
+            badgeCorner = New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = badgeHolder })
             New("UIPadding", {
-                PaddingLeft   = UDim.new(0, 12),
-                PaddingRight  = UDim.new(0, 12),
-                PaddingTop    = UDim.new(0, 5),
-                PaddingBottom = UDim.new(0, 5),
+                PaddingLeft   = UDim.new(0, 14),
+                PaddingRight  = UDim.new(0, 14),
+                PaddingTop    = UDim.new(0, 7),
+                PaddingBottom = UDim.new(0, 7),
                 Parent = badgeHolder
             })
 
@@ -8519,16 +8529,17 @@ function Library:CreateCommandBar(Config)
                 ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
                 Color = badgeColor,
                 Thickness = 1.2,
-                Transparency = 0.45,
+                Transparency = 0.5,
                 Parent = badgeHolder
             })
-            local gradient = New("UIGradient", {
+            shimmerGrad = New("UIGradient", {
                 Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0,   Color3.fromRGB(255, 255, 255)),
-                    ColorSequenceKeypoint.new(0.5, badgeColor),
-                    ColorSequenceKeypoint.new(1,   Color3.fromRGB(255, 255, 255)),
+                    ColorSequenceKeypoint.new(0,   Color3.fromRGB(80, 80, 80)),
+                    ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 255, 255)),
+                    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 255, 255)),
+                    ColorSequenceKeypoint.new(1,   Color3.fromRGB(80, 80, 80)),
                 }),
-                Rotation = 45,
+                Rotation = 15,
                 Parent = badgeStroke
             })
 
@@ -8540,7 +8551,6 @@ function Library:CreateCommandBar(Config)
                 Parent = badgeHolder
             })
 
-            -- Invisible hover button
             local btn = New("TextButton", {
                 BackgroundTransparency = 1,
                 Size = UDim2.fromScale(1, 1),
@@ -8555,33 +8565,34 @@ function Library:CreateCommandBar(Config)
                 Size = UDim2.fromOffset(0, 0),
                 Text = badgeKey,
                 TextColor3 = badgeColor,
-                TextTransparency = 0.3,
-                TextSize = 11,
+                TextTransparency = 0.35,
+                TextSize = 13,
                 Font = Enum.Font.GothamBold,
                 Parent = badgeHolder
             })
 
             btn.MouseEnter:Connect(function()
                 TweenService:Create(badgeStroke, badgeTweenIn, { Transparency = 0, Thickness = 1.8 }):Play()
-                TweenService:Create(badgeGlow, badgeTweenIn, { Thickness = 4, Transparency = 0.85 }):Play()
+                TweenService:Create(badgeGlow, badgeTweenIn, { Thickness = 5, Transparency = 0.88 }):Play()
                 TweenService:Create(badgeLabel, badgeTweenIn, { TextTransparency = 0 }):Play()
-                TweenService:Create(gradient, badgeTweenIn, { Rotation = 135 }):Play()
-                TweenService:Create(badgeScale, badgeTweenIn, { Scale = 1.06 }):Play()
+                TweenService:Create(badgeScale, badgeTweenIn, { Scale = 1.07 }):Play()
+                playShimmer(shimmerGrad)
             end)
 
             btn.MouseLeave:Connect(function()
-                TweenService:Create(badgeStroke, badgeTweenOut, { Transparency = 0.45, Thickness = 1.2 }):Play()
+                TweenService:Create(badgeStroke, badgeTweenOut, { Transparency = 0.5, Thickness = 1.2 }):Play()
                 TweenService:Create(badgeGlow, badgeTweenOut, { Thickness = 0, Transparency = 0.7 }):Play()
-                TweenService:Create(badgeLabel, badgeTweenOut, { TextTransparency = 0.3 }):Play()
-                TweenService:Create(gradient, badgeTweenOut, { Rotation = 45 }):Play()
+                TweenService:Create(badgeLabel, badgeTweenOut, { TextTransparency = 0.35 }):Play()
                 TweenService:Create(badgeScale, badgeTweenOut, { Scale = 1 }):Play()
             end)
 
             btn.MouseButton1Down:Connect(function()
-                TweenService:Create(badgeScale, badgeTweenClick, { Scale = 0.94 }):Play()
+                TweenService:Create(badgeScale, badgeTweenClick, { Scale = 0.93 }):Play()
+                TweenService:Create(badgeCorner, badgeTweenClick, { CornerRadius = UDim.new(0, 10) }):Play()
             end)
             btn.MouseButton1Up:Connect(function()
-                TweenService:Create(badgeScale, badgeTweenIn, { Scale = 1.06 }):Play()
+                TweenService:Create(badgeScale, badgeTweenIn, { Scale = 1.07 }):Play()
+                TweenService:Create(badgeCorner, badgeTweenIn, { CornerRadius = UDim.new(0, 6) }):Play()
             end)
         end
         
@@ -8598,7 +8609,8 @@ function Library:CreateCommandBar(Config)
             badgeStroke = badgeStroke,
             badgeGlow = badgeGlow,
             badgeLabel = badgeLabel,
-            badgeScale = badgeScale
+            badgeScale = badgeScale,
+            shimmerGrad = shimmerGrad
         })
     end
 
@@ -8663,7 +8675,12 @@ function Library:CreateCommandBar(Config)
             Size = UDim2.fromOffset(Config.Width or 340, targetHeight)
         }):Play()
 
-        -- Pulse glow on top result's badge when searching
+        -- Shimmer loop on top result's badge when searching
+        if _shimmerLoopConn then
+            _shimmerLoopConn:Disconnect()
+            _shimmerLoopConn = nil
+        end
+
         if query ~= "" then
             local topEntry = nil
             local topScore = -1
@@ -8679,21 +8696,26 @@ function Library:CreateCommandBar(Config)
             for _, re in ipairs(CommandBar.RowEntries) do
                 if re.badgeHolder then
                     if re == topEntry then
-                        -- Pulse the top result badge
-                        TweenService:Create(re.badgeStroke, badgePulseTween, { Transparency = 0, Thickness = 2 }):Play()
-                        TweenService:Create(re.badgeGlow, badgePulseTween, { Thickness = 5, Transparency = 0.75 }):Play()
-                        TweenService:Create(re.badgeLabel, badgePulseTween, { TextTransparency = 0 }):Play()
-                        if re.badgeScale then
-                            TweenService:Create(re.badgeScale, badgePulseTween, { Scale = 1.08 }):Play()
+                        -- Activate top result badge
+                        TweenService:Create(re.badgeStroke, badgeTweenIn, { Transparency = 0, Thickness = 1.8 }):Play()
+                        TweenService:Create(re.badgeGlow, badgeTweenIn, { Thickness = 5, Transparency = 0.88 }):Play()
+                        TweenService:Create(re.badgeLabel, badgeTweenIn, { TextTransparency = 0 }):Play()
+                        TweenService:Create(re.badgeScale, badgeTweenIn, { Scale = 1.07 }):Play()
+                        -- Continuous shimmer loop
+                        if re.shimmerGrad then
+                            playShimmer(re.shimmerGrad)
+                            _shimmerLoopConn = game:GetService("RunService").Heartbeat:Connect(function()
+                                if re.shimmerGrad and re.shimmerGrad.Offset.X >= 0.95 then
+                                    playShimmer(re.shimmerGrad)
+                                end
+                            end)
                         end
                     else
                         -- Reset others
-                        TweenService:Create(re.badgeStroke, badgeTweenOut, { Transparency = 0.45, Thickness = 1.2 }):Play()
+                        TweenService:Create(re.badgeStroke, badgeTweenOut, { Transparency = 0.5, Thickness = 1.2 }):Play()
                         TweenService:Create(re.badgeGlow, badgeTweenOut, { Thickness = 0, Transparency = 0.7 }):Play()
-                        TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.3 }):Play()
-                        if re.badgeScale then
-                            TweenService:Create(re.badgeScale, badgeTweenOut, { Scale = 1 }):Play()
-                        end
+                        TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.35 }):Play()
+                        TweenService:Create(re.badgeScale, badgeTweenOut, { Scale = 1 }):Play()
                     end
                 end
             end
@@ -8701,12 +8723,10 @@ function Library:CreateCommandBar(Config)
             -- Reset all badges when search is cleared
             for _, re in ipairs(CommandBar.RowEntries) do
                 if re.badgeHolder then
-                    TweenService:Create(re.badgeStroke, badgeTweenOut, { Transparency = 0.45, Thickness = 1.2 }):Play()
+                    TweenService:Create(re.badgeStroke, badgeTweenOut, { Transparency = 0.5, Thickness = 1.2 }):Play()
                     TweenService:Create(re.badgeGlow, badgeTweenOut, { Thickness = 0, Transparency = 0.7 }):Play()
-                    TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.3 }):Play()
-                    if re.badgeScale then
-                        TweenService:Create(re.badgeScale, badgeTweenOut, { Scale = 1 }):Play()
-                    end
+                    TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.35 }):Play()
+                    TweenService:Create(re.badgeScale, badgeTweenOut, { Scale = 1 }):Play()
                 end
             end
         end
