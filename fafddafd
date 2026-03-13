@@ -8962,7 +8962,7 @@ function Library:CreateChatLog(Config)
     
     local function GetTimeFormat()
         local date = os.date("*t")
-        return string.format("[%02d:%02d:%02d]", date.hour, date.min, date.sec)
+        return string.format("%02d:%02d", date.hour, date.min)
     end
     
     local function ToColorTag(color)
@@ -9108,12 +9108,19 @@ function Library:CreateChatLog(Config)
             LayoutOrder = #ChatLog.Messages + 1
         })
         New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = msgRow })
+        New("UIPadding", {
+            PaddingTop = UDim.new(0, 6),
+            PaddingBottom = UDim.new(0, 4),
+            PaddingLeft = UDim.new(0, 4),
+            PaddingRight = UDim.new(0, 6),
+            Parent = msgRow
+        })
 
         local avatar = New("ImageLabel", {
             BackgroundColor3 = "MainColor",
             Image = avatarUrl,
             Size = UDim2.fromOffset(32, 32),
-            Position = UDim2.fromOffset(4, 6),
+            Position = UDim2.fromOffset(0, 0),
             Parent = msgRow
         })
         New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = avatar })
@@ -9121,18 +9128,18 @@ function Library:CreateChatLog(Config)
         -- Right side container for header + messages
         local rightSide = New("Frame", {
             BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(44, 0),
-            Size = UDim2.new(1, -48, 0, 0),
+            Position = UDim2.fromOffset(40, 0),
+            Size = UDim2.new(1, -40, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             Parent = msgRow
         })
 
-        -- Header: Name + Time
+        -- Header: Name (bold colored) + gray time
         New("TextLabel", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 18),
-            Text = "<b>" .. nameTag .. "</b>  " .. timeTag,
-            TextSize = 14,
+            Size = UDim2.new(1, 0, 0, 20),
+            Text = "<b>" .. nameTag .. "</b>  <font color='rgb(110,110,120)'>" .. timeTag .. "</font>",
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             RichText = true,
             Parent = rightSide
@@ -9141,7 +9148,7 @@ function Library:CreateChatLog(Config)
         -- Message list container
         local msgList = New("Frame", {
             BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(0, 20),
+            Position = UDim2.fromOffset(0, 22),
             Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             Parent = rightSide
