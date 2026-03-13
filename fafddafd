@@ -8347,7 +8347,7 @@ function Library:CreateCommandBar(Config)
     local ListScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 81),
-        Size = UDim2.new(1, 0, 1, -117), -- 81px top offset + 36px bottom input
+        Size = UDim2.new(1, 0, 1, -81 - 36),
         ScrollBarThickness = 0,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
@@ -8481,23 +8481,31 @@ function Library:CreateCommandBar(Config)
             Parent = wrapper
         })
 
-        -- Category badge (only show if not OTHER/nil)
+        -- Category badge
         local badgeKey = (entry.badge or "OTHER"):upper()
-        local badgeColor = BADGE_COLORS[badgeKey] or BADGE_COLORS.OTHER
         if badgeKey ~= "OTHER" then
+            local accent = Library.Scheme["AccentColor"]
             local badge = New("TextLabel", {
-                BackgroundColor3 = badgeColor,
+                BackgroundColor3 = accent,
+                BackgroundTransparency = 0.15,
                 AnchorPoint = Vector2.new(1, 0.5),
-                Position = UDim2.new(1, -12, 0.5, 0),
-                Size = UDim2.fromOffset(60, 22),
-                Text = "<b>" .. badgeKey .. "</b>",
-                TextColor3 = Color3.fromRGB(255, 255, 255),
+                Position = UDim2.new(1, -10, 0.5, 0),
+                Size = UDim2.fromOffset(56, 20),
+                Text = badgeKey,
+                TextColor3 = accent,
                 TextSize = 10,
-                RichText = true,
-                BackgroundTransparency = 0,
+                Font = Enum.Font.GothamBold,
+                RichText = false,
                 Parent = wrapper
             })
-            New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = badge })
+            New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = badge })
+            New("UIStroke", {
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                Color = accent,
+                Transparency = 0.6,
+                Thickness = 1,
+                Parent = badge
+            })
         end
         
         local function fillSearch()
