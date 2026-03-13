@@ -8272,6 +8272,18 @@ function Library:CreateCommandBar(Config)
         RichText = true,
         Parent = TitleBar
     })
+    
+    local CountLbl = New("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(100, 36),
+        AnchorPoint = Vector2.new(1, 0),
+        Position = UDim2.new(1, -10, 0, 0),
+        Text = "0 Commands",
+        TextColor3 = "AccentColor",
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        Parent = TitleBar
+    })
       local SearchBox = New("TextBox", {
         BackgroundColor3 = "MainColor",
         PlaceholderText = "Search...",
@@ -8335,11 +8347,10 @@ function Library:CreateCommandBar(Config)
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 81),
         Size = UDim2.new(1, 0, 1, -117), -- 81px top offset + 36px bottom input
-        ScrollBarThickness = 3,
+        ScrollBarThickness = 0,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        ScrollBarImageColor3 = "AccentColor",
         Parent = MainGroup
     })
 
@@ -8476,6 +8487,8 @@ function Library:CreateCommandBar(Config)
     for _, cmd in ipairs(Config.Commands) do
         CommandBar:AddCommand(cmd)
     end
+    
+    CountLbl.Text = tostring(#CommandBar.AllEntries) .. " Commands"
 
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower():match("^%s*(.-)%s*$")
