@@ -9025,21 +9025,72 @@ function Library:CreateChatLog(Config)
             end
         end
 
-        -- Spam filtering check
+        -- Spam filtering check (exact same message repeated)
         local lastMsgData = ChatLog.Messages[#ChatLog.Messages]
         if lastMsgData and lastMsgData.speaker == lowerSpk and lastMsgData.rawMsg == lowerMsg then
             lastMsgData.count = lastMsgData.count + 1
-            local timeTag = "<font color='rgb(130, 130, 130)'>" .. GetTimeFormat() .. "</font>"
-            local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
             local countTag = " <font color='rgb(150, 150, 150)'>(x" .. tostring(lastMsgData.count) .. ")</font>"
-            
-            lastMsgData.lbl.Text = timeTag .. " <b>" .. nameTag .. "</b>: " .. displayMsg .. countTag
+            lastMsgData.lbl.Text = displayMsg .. countTag
             return
         end
 
+        -- Discord-style grouping: same speaker consecutive = append under same group
+        if lastMsgData and lastMsgData.speaker == lowerSpk and lastMsgData.group then
+            local msgLine = New("TextButton", {
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                TextWrapped = true,
+                Text = displayMsg,
+                TextSize = 13,
+                RichText = true,
+                Parent = lastMsgData.msgList
+            })
+            
+            msgLine.MouseButton1Click:Connect(function()
+                if setclipboard then
+                    setclipboard(Speaker .. ": " .. Message)
+                    Library:Notify("Copied message!", 3)
+                end
+            end)
+
+            msgLine.MouseButton2Click:Connect(function()
+                if ChatLog.HighlightedPlayer == lowerSpk then
+                    ChatLog.HighlightedPlayer = nil
+                    Library:Notify("Removed highlight", 3)
+                else
+                    ChatLog.HighlightedPlayer = lowerSpk
+                    Library:Notify("Highlighting: " .. Speaker, 3)
+                end
+                UpdateHighlights()
+            end)
+
+            table.insert(ChatLog.Messages, {
+                row = lastMsgData.row,
+                group = lastMsgData.group,
+                msgList = lastMsgData.msgList,
+                lbl = msgLine,
+                speaker = lowerSpk,
+                msg = lowerMsg,
+                rawMsg = lowerMsg,
+                count = 1
+            })
+
+            task.defer(function()
+                local isAtBottom = (LogScroll.CanvasPosition.Y >= LogScroll.AbsoluteCanvasSize.Y - LogScroll.AbsoluteWindowSize.Y - 20)
+                if isAtBottom then
+                    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.AbsoluteCanvasSize.Y)
+                end
+            end)
+            return
+        end
+
+        -- New speaker group: Avatar + Header + Message
         local timeTag = "<font color='rgb(130, 130, 130)'>" .. GetTimeFormat() .. "</font>"
         local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
-        
+
         local Players = game:GetService("Players")
         local speakerPlayer = Players:FindFirstChild(Speaker)
         local avatarUrl = ""
@@ -9056,46 +9107,73 @@ function Library:CreateChatLog(Config)
             Parent = LogScroll,
             LayoutOrder = #ChatLog.Messages + 1
         })
+        New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = msgRow })
 
         local avatar = New("ImageLabel", {
             BackgroundColor3 = "MainColor",
             Image = avatarUrl,
-            Size = UDim2.fromOffset(28, 28),
-            Position = UDim2.fromOffset(0, 2),
+            Size = UDim2.fromOffset(32, 32),
+            Position = UDim2.fromOffset(4, 6),
             Parent = msgRow
         })
         New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = avatar })
 
-        local msgBtn = New("TextButton", {
+        -- Right side container for header + messages
+        local rightSide = New("Frame", {
+            BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(44, 0),
+            Size = UDim2.new(1, -48, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = msgRow
+        })
+
+        -- Header: Name + Time
+        New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 18),
+            Text = "<b>" .. nameTag .. "</b>  " .. timeTag,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            RichText = true,
+            Parent = rightSide
+        })
+
+        -- Message list container
+        local msgList = New("Frame", {
+            BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(0, 20),
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = rightSide
+        })
+        New("UIListLayout", {
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 2),
+            Parent = msgList
+        })
+
+        -- First message line
+        local msgLine = New("TextButton", {
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Top,
-            Position = UDim2.fromOffset(36, 0),
-            Size = UDim2.new(1, -36, 0, 0),
+            Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             TextWrapped = true,
-            Text = timeTag .. " <b>" .. nameTag .. "</b>: " .. displayMsg,
-            TextSize = 14,
+            Text = displayMsg,
+            TextSize = 13,
             RichText = true,
-            Parent = msgRow
+            Parent = msgList
         })
-        New("UIPadding", {
-            PaddingTop = UDim.new(0, 3),
-            PaddingBottom = UDim.new(0, 3),
-            PaddingLeft = UDim.new(0, 4),
-            PaddingRight = UDim.new(0, 4),
-            Parent = msgBtn
-        })
-        New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = msgBtn })
         
-        msgBtn.MouseButton1Click:Connect(function()
+        msgLine.MouseButton1Click:Connect(function()
             if setclipboard then
                 setclipboard(Speaker .. ": " .. Message)
                 Library:Notify("Copied message!", 3)
             end
         end)
 
-        msgBtn.MouseButton2Click:Connect(function()
+        msgLine.MouseButton2Click:Connect(function()
             if ChatLog.HighlightedPlayer == lowerSpk then
                 ChatLog.HighlightedPlayer = nil
                 Library:Notify("Removed highlight", 3)
@@ -9108,9 +9186,11 @@ function Library:CreateChatLog(Config)
         
         table.insert(ChatLog.Messages, {
             row = msgRow,
-            lbl = msgBtn,
+            group = true,
+            msgList = msgList,
+            lbl = msgLine,
             speaker = lowerSpk,
-            msg = timeTag .. " <b>" .. nameTag .. "</b>: " .. lowerMsg,
+            msg = lowerMsg,
             rawMsg = lowerMsg,
             count = 1
         })
@@ -9122,7 +9202,6 @@ function Library:CreateChatLog(Config)
         
         -- Auto scroll functionality
         task.defer(function()
-            -- Check if user is scrolled near bottom
             local isAtBottom = (LogScroll.CanvasPosition.Y >= LogScroll.AbsoluteCanvasSize.Y - LogScroll.AbsoluteWindowSize.Y - 20)
             if isAtBottom or #ChatLog.Messages == 1 then
                 LogScroll.CanvasPosition = Vector2.new(0, LogScroll.AbsoluteCanvasSize.Y)
