@@ -8672,11 +8672,11 @@ function Library:CreateChatLog(Config)
 
     ClearBtn.MouseEnter:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end)
     ClearBtn.MouseLeave:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end)
-    Library:AddTooltip(ClearBtn, "Clear Chat")
+    Library:AddTooltip("Clear Chat", "Clear Chat", ClearBtn)
     
     ExportBtn.MouseEnter:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end)
     ExportBtn.MouseLeave:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end)
-    Library:AddTooltip(ExportBtn, "Export Chat to Workspace")
+    Library:AddTooltip("Export Chat to Workspace", "Export Chat to Workspace", ExportBtn)
     
     Library:MakeLine(MainGroup, {
         Position = UDim2.fromOffset(0, 36),
@@ -8805,7 +8805,7 @@ function Library:CreateChatLog(Config)
     
     JumpBtn.MouseEnter:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = "AccentColor"}):Play() end)
     JumpBtn.MouseLeave:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = "FontColor"}):Play() end)
-    Library:AddTooltip(JumpBtn, "Jump to Present")
+    Library:AddTooltip("Jump to Present", "Jump to Present", JumpBtn)
 
     JumpBtn.MouseButton1Click:Connect(function()
         TweenService:Create(LogScroll, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
