@@ -8616,9 +8616,8 @@ function Library:CreateChatLog(Config)
         BackgroundColor3 = function()
             return Library:GetBetterColor(Library.Scheme.BackgroundColor, -1)
         end,
-        Position = UDim2.new(0.5, -Config.Width / 2, 0.5, -Config.Height / 2),
+        Position = UDim2.new(1, -Config.Width - 10, 0.5, -Config.Height / 2),
         Size = UDim2.fromOffset(Config.Width, Config.Height),
-        AnchorPoint = Vector2.new(0.5, 0.5),
         Visible = false,
         Parent = Library.ScreenGui
     })
@@ -8973,10 +8972,10 @@ function Library:CreateChatLog(Config)
     local function UpdateHighlights()
         for _, tbl in ipairs(ChatLog.Messages) do
             if ChatLog.HighlightedPlayer and tbl.speaker == ChatLog.HighlightedPlayer then
-                tbl.lbl.BackgroundColor3 = Library.Scheme["AccentColor"]
-                tbl.lbl.BackgroundTransparency = 0.8
+                tbl.row.BackgroundColor3 = Library.Scheme["AccentColor"]
+                tbl.row.BackgroundTransparency = 0.85
             else
-                tbl.lbl.BackgroundTransparency = 1
+                tbl.row.BackgroundTransparency = 1
             end
         end
     end
@@ -9034,25 +9033,51 @@ function Library:CreateChatLog(Config)
             local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
             local countTag = " <font color='rgb(150, 150, 150)'>(x" .. tostring(lastMsgData.count) .. ")</font>"
             
-            lastMsgData.lbl.Text = timeTag .. " [" .. nameTag .. "]: " .. displayMsg .. countTag
+            lastMsgData.lbl.Text = timeTag .. " <b>" .. nameTag .. "</b>: " .. displayMsg .. countTag
             return
         end
 
         local timeTag = "<font color='rgb(130, 130, 130)'>" .. GetTimeFormat() .. "</font>"
         local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
         
+        local Players = game:GetService("Players")
+        local speakerPlayer = Players:FindFirstChild(Speaker)
+        local avatarUrl = ""
+        if speakerPlayer then
+            pcall(function()
+                avatarUrl = Players:GetUserThumbnailAsync(speakerPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+            end)
+        end
+
+        local msgRow = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = LogScroll,
+            LayoutOrder = #ChatLog.Messages + 1
+        })
+
+        local avatar = New("ImageLabel", {
+            BackgroundColor3 = "MainColor",
+            Image = avatarUrl,
+            Size = UDim2.fromOffset(28, 28),
+            Position = UDim2.fromOffset(0, 2),
+            Parent = msgRow
+        })
+        New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = avatar })
+
         local msgBtn = New("TextButton", {
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Top,
-            Size = UDim2.new(1, 0, 0, 0),
+            Position = UDim2.fromOffset(36, 0),
+            Size = UDim2.new(1, -36, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             TextWrapped = true,
-            Text = timeTag .. " [" .. nameTag .. "]: " .. displayMsg,
+            Text = timeTag .. " <b>" .. nameTag .. "</b>: " .. displayMsg,
             TextSize = 14,
             RichText = true,
-            Parent = LogScroll,
-            LayoutOrder = #ChatLog.Messages + 1
+            Parent = msgRow
         })
         New("UIPadding", {
             PaddingTop = UDim.new(0, 3),
@@ -9082,16 +9107,17 @@ function Library:CreateChatLog(Config)
         end)
         
         table.insert(ChatLog.Messages, {
+            row = msgRow,
             lbl = msgBtn,
             speaker = lowerSpk,
-            msg = timeTag .. " [" .. nameTag .. "]: " .. lowerMsg,
+            msg = timeTag .. " <b>" .. nameTag .. "</b>: " .. lowerMsg,
             rawMsg = lowerMsg,
             count = 1
         })
 
         if ChatLog.HighlightedPlayer == lowerSpk then
-            msgBtn.BackgroundColor3 = Library.Scheme["AccentColor"]
-            msgBtn.BackgroundTransparency = 0.8
+            msgRow.BackgroundColor3 = Library.Scheme["AccentColor"]
+            msgRow.BackgroundTransparency = 0.85
         end
         
         -- Auto scroll functionality
@@ -9106,7 +9132,7 @@ function Library:CreateChatLog(Config)
     
     ClearBtn.MouseButton1Click:Connect(function()
         for _, tbl in ipairs(ChatLog.Messages) do
-            tbl.lbl:Destroy()
+            tbl.row:Destroy()
         end
         table.clear(ChatLog.Messages)
         Library:Notify("Chat cleared.", 3)
@@ -9130,12 +9156,12 @@ function Library:CreateChatLog(Config)
         local query = SearchBox.Text:lower():match("^%s*(.-)%s*$")
         for _, tbl in ipairs(ChatLog.Messages) do
             if query == "" then
-                tbl.lbl.Visible = true
+                tbl.row.Visible = true
             else
                 if tbl.speaker:match(query, 1, true) or tbl.msg:match(query, 1, true) then
-                    tbl.lbl.Visible = true
+                    tbl.row.Visible = true
                 else
-                    tbl.lbl.Visible = false
+                    tbl.row.Visible = false
                 end
             end
         end
