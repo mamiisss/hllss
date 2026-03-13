@@ -8678,6 +8678,66 @@ function Library:CreateChatLog(Config)
     ExportBtn.MouseLeave:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end)
     Library:AddTooltip("Export Chat to Workspace", "Export Chat to Workspace", ExportBtn)
     
+    local TranslateIcon = Library:GetIcon("globe")
+    local TranslateBtn = New("ImageButton", {
+        BackgroundTransparency = 1,
+        Image = TranslateIcon.Url,
+        ImageColor3 = "FontColor",
+        ImageRectOffset = TranslateIcon.ImageRectOffset,
+        ImageRectSize = TranslateIcon.ImageRectSize,
+        ImageTransparency = 0.5,
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -60, 0.5, 0),
+        Size = UDim2.fromOffset(16, 16),
+        Parent = TitleBar
+    })
+    
+    local Languages = {"TR", "EN", "RU", "ES", "DE", "FR"}
+    local LangIndex = 1
+    
+    local LangBtn = New("TextButton", {
+        BackgroundTransparency = 1,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.fromOffset(40, 20),
+        Text = "[" .. Languages[LangIndex] .. "]",
+        TextColor3 = "FontColor",
+        TextSize = 12,
+        Font = Enum.Font.GothamBold,
+        Parent = TitleBar
+    })
+
+    ChatLog.TranslateToggled = false
+    ChatLog.TargetLang = Languages[LangIndex]:lower()
+
+    TranslateBtn.MouseEnter:Connect(function() 
+        if not ChatLog.TranslateToggled then TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end
+    end)
+    TranslateBtn.MouseLeave:Connect(function() 
+        if not ChatLog.TranslateToggled then TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end
+    end)
+    Library:AddTooltip("Toggle Live Translator", "Live Translator Off", TranslateBtn)
+    
+    TranslateBtn.MouseButton1Click:Connect(function()
+        ChatLog.TranslateToggled = not ChatLog.TranslateToggled
+        if ChatLog.TranslateToggled then
+            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play()
+            Library:Notify("Live Translator Enabled", 3)
+        else
+            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play()
+            Library:Notify("Live Translator Disabled", 3)
+        end
+    end)
+
+    LangBtn.MouseButton1Click:Connect(function()
+        LangIndex = LangIndex >= #Languages and 1 or LangIndex + 1
+        LangBtn.Text = "[" .. Languages[LangIndex] .. "]"
+        ChatLog.TargetLang = Languages[LangIndex]:lower()
+    end)
+    LangBtn.MouseEnter:Connect(function() TweenService:Create(LangBtn, Library.TweenInfo, {TextColor3 = "AccentColor"}):Play() end)
+    LangBtn.MouseLeave:Connect(function() TweenService:Create(LangBtn, Library.TweenInfo, {TextColor3 = "FontColor"}):Play() end)
+    Library:AddTooltip("Cycle Target Language", "Click to change language", LangBtn)
+
     Library:MakeLine(MainGroup, {
         Position = UDim2.fromOffset(0, 36),
         Size = UDim2.new(1, 0, 0, 1),
@@ -8908,11 +8968,52 @@ function Library:CreateChatLog(Config)
             end
         end
     end
+
+    local HttpGetter = (request or http_request or (http and http.request) or syn and syn.request)
+    local function FetchTranslation(text, targetLang)
+        if not HttpGetter then return nil end
+        
+        -- Basic URL encoding for the text
+        local encoded = string.gsub(text, "([^%w _%%%-%.~])", function(c)
+            return string.format("%%%02X", string.byte(c))
+        end)
+        encoded = string.gsub(encoded, " ", "+")
+        
+        local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" .. targetLang .. "&dt=t&q=" .. encoded
+        
+        local success, response = pcall(function()
+            return HttpGetter({
+                Url = url,
+                Method = "GET"
+            })
+        end)
+
+        if success and response and response.StatusCode == 200 then
+            -- Extreme lightweight parse since JSONDecode might fail or not exist
+            local translation = response.Body:match('^%[%[%["(.-)","')
+            if translation then
+                -- Unescape quotes and slashes if any
+                translation = translation:gsub('\\"', '"'):gsub('\\\\', '\\')
+                return translation
+            end
+        end
+        return nil
+    end
     
     function ChatLog:AddMessage(Speaker, Message, TeamColor)
         local lowerMsg = Message:lower()
         local lowerSpk = Speaker:lower()
         
+        local displayMsg = Message
+        if ChatLog.TranslateToggled then
+            local translation = FetchTranslation(Message, ChatLog.TargetLang)
+            if translation and translation:lower() ~= lowerMsg then
+                local accent = Library.Scheme["AccentColor"]
+                local tColor = string.format('rgb(%d, %d, %d)', accent.R*255, accent.G*255, accent.B*255)
+                displayMsg = Message .. " / <font color='" .. tColor .. "'><i>[" .. ChatLog.TargetLang:upper() .. "]: " .. translation .. "</i></font>"
+            end
+        end
+
         -- Spam filtering check
         local lastMsgData = ChatLog.Messages[#ChatLog.Messages]
         if lastMsgData and lastMsgData.speaker == lowerSpk and lastMsgData.rawMsg == lowerMsg then
@@ -8921,7 +9022,7 @@ function Library:CreateChatLog(Config)
             local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
             local countTag = " <font color='rgb(150, 150, 150)'>(x" .. tostring(lastMsgData.count) .. ")</font>"
             
-            lastMsgData.lbl.Text = timeTag .. " [" .. nameTag .. "]: " .. Message .. countTag
+            lastMsgData.lbl.Text = timeTag .. " [" .. nameTag .. "]: " .. displayMsg .. countTag
             return
         end
 
@@ -8935,7 +9036,7 @@ function Library:CreateChatLog(Config)
             Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             TextWrapped = true,
-            Text = timeTag .. " [" .. nameTag .. "]: " .. Message,
+            Text = timeTag .. " [" .. nameTag .. "]: " .. displayMsg,
             TextSize = 13,
             RichText = true,
             Parent = LogScroll,
