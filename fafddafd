@@ -8710,21 +8710,28 @@ function Library:CreateChatLog(Config)
     ChatLog.TranslateToggled = false
     ChatLog.TargetLang = Languages[LangIndex]:lower()
 
+    local function UpdateTranslateIcon()
+        if ChatLog.TranslateToggled then
+            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play()
+        else
+            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play()
+        end
+    end
+
     TranslateBtn.MouseEnter:Connect(function() 
         if not ChatLog.TranslateToggled then TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end
     end)
     TranslateBtn.MouseLeave:Connect(function() 
-        if not ChatLog.TranslateToggled then TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end
+        UpdateTranslateIcon()
     end)
     Library:AddTooltip("Toggle Live Translator", "Live Translator Off", TranslateBtn)
     
     TranslateBtn.MouseButton1Click:Connect(function()
         ChatLog.TranslateToggled = not ChatLog.TranslateToggled
+        UpdateTranslateIcon()
         if ChatLog.TranslateToggled then
-            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play()
             Library:Notify("Live Translator Enabled", 3)
         else
-            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play()
             Library:Notify("Live Translator Disabled", 3)
         end
     end)
@@ -8927,15 +8934,24 @@ function Library:CreateChatLog(Config)
 
     local function SendChatMessage(msg)
         local TextChatService = game:GetService("TextChatService")
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local Players = game:GetService("Players")
+
         if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-            local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-            if channel then
-                channel:SendAsync(msg)
+            local textChannels = TextChatService:FindFirstChild("TextChannels")
+            if textChannels then
+                local channel = textChannels:FindFirstChild("RBXGeneral")
+                if channel then
+                    channel:SendAsync(msg)
+                    return
+                end
             end
-        else
-            local RStorage = game:GetService("ReplicatedStorage")
-            local SayMsg = RStorage:FindFirstChild("DefaultChatSystemChatEvents") and RStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
-            if SayMsg then SayMsg:FireServer(msg, "All") end
+        end
+        
+        -- Legacy Fallback
+        local SayMsg = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") and ReplicatedStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
+        if SayMsg then 
+            SayMsg:FireServer(msg, "All") 
         end
     end
 
