@@ -8757,7 +8757,7 @@ function Library:CreateChatLog(Config)
     local LogScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 81),
-        Size = UDim2.new(1, 0, 1, -81),
+        Size = UDim2.new(1, 0, 1, -117), -- 81px top + 36px bottom input
         ScrollBarThickness = 3,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
@@ -8778,6 +8778,49 @@ function Library:CreateChatLog(Config)
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 2),
         Parent = LogScroll
+    })
+    
+    local inputSeparator = Library:MakeLine(MainGroup, {
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.new(0, 0, 1, -36),
+        Size = UDim2.new(1, 0, 0, 1),
+        ZIndex = 2
+    })
+
+    local InputBar = New("Frame", {
+        BackgroundColor3 = "MainColor",
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.fromScale(0, 1),
+        Size = UDim2.new(1, 0, 0, 36),
+        ClipsDescendants = true,
+        Parent = MainGroup
+    })
+    
+    local ChatIcon = Library:GetIcon("message-square")
+    if ChatIcon then
+        New("ImageLabel", {
+            BackgroundTransparency = 1,
+            Image = ChatIcon.Url,
+            ImageColor3 = "AccentColor",
+            ImageRectOffset = ChatIcon.ImageRectOffset,
+            ImageRectSize = ChatIcon.ImageRectSize,
+            AnchorPoint = Vector2.new(0, 0.5),
+            Position = UDim2.new(0, 8, 0.5, 0),
+            Size = UDim2.fromOffset(16, 16),
+            Parent = InputBar
+        })
+    end
+
+    local ChatInput = New("TextBox", {
+        BackgroundTransparency = 1,
+        PlaceholderText = "Type chat message...",
+        Position = UDim2.fromOffset(28, 0),
+        Size = UDim2.new(1, -36, 1, 0),
+        Text = "",
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ClearTextOnFocus = true,
+        Parent = InputBar
     })
     
     local JumpBox = New("Frame", {
@@ -8822,6 +8865,30 @@ function Library:CreateChatLog(Config)
         JumpBox.Visible = not isAtBottom and (#ChatLog.Messages > 0)
     end)
 
+    local function SendChatMessage(msg)
+        local TextChatService = game:GetService("TextChatService")
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+            if channel then
+                channel:SendAsync(msg)
+            end
+        else
+            local RStorage = game:GetService("ReplicatedStorage")
+            local SayMsg = RStorage:FindFirstChild("DefaultChatSystemChatEvents") and RStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
+            if SayMsg then SayMsg:FireServer(msg, "All") end
+        end
+    end
+
+    ChatInput.FocusLost:Connect(function(enter)
+        if not enter then return end
+        local raw = ChatInput.Text
+        ChatInput.Text = ""
+        if raw:match("^%s*$") then return end
+        SendChatMessage(raw)
+    end)
+
+    ChatLog.HighlightedPlayer = nil
+    
     local function GetTimeFormat()
         local date = os.date("*t")
         return string.format("[%02d:%02d:%02d]", date.hour, date.min, date.sec)
@@ -8829,6 +8896,17 @@ function Library:CreateChatLog(Config)
     
     local function ToColorTag(color)
         return string.format('rgb(%d, %d, %d)', color.R * 255, color.G * 255, color.B * 255)
+    end
+
+    local function UpdateHighlights()
+        for _, tbl in ipairs(ChatLog.Messages) do
+            if ChatLog.HighlightedPlayer and tbl.speaker == ChatLog.HighlightedPlayer then
+                tbl.lbl.BackgroundColor3 = Library.Scheme["AccentColor"]
+                tbl.lbl.BackgroundTransparency = 0.8
+            else
+                tbl.lbl.BackgroundTransparency = 1
+            end
+        end
     end
     
     function ChatLog:AddMessage(Speaker, Message, TeamColor)
@@ -8870,6 +8948,17 @@ function Library:CreateChatLog(Config)
                 Library:Notify("Copied message!", 3)
             end
         end)
+
+        msgBtn.MouseButton2Click:Connect(function()
+            if ChatLog.HighlightedPlayer == lowerSpk then
+                ChatLog.HighlightedPlayer = nil
+                Library:Notify("Removed highlight", 3)
+            else
+                ChatLog.HighlightedPlayer = lowerSpk
+                Library:Notify("Highlighting: " .. Speaker, 3)
+            end
+            UpdateHighlights()
+        end)
         
         table.insert(ChatLog.Messages, {
             lbl = msgBtn,
@@ -8878,6 +8967,11 @@ function Library:CreateChatLog(Config)
             rawMsg = lowerMsg,
             count = 1
         })
+
+        if ChatLog.HighlightedPlayer == lowerSpk then
+            msgBtn.BackgroundColor3 = Library.Scheme["AccentColor"]
+            msgBtn.BackgroundTransparency = 0.8
+        end
         
         -- Auto scroll functionality
         task.defer(function()
