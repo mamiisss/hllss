@@ -8542,7 +8542,7 @@ function Library:CreateCommandBar(Config)
             end
         end
 
-        local baseHeight = 36 + 45 + 36 + 5 -- Title(36) + TopPad(45) + InputBottom(36) + BottomPad(5)
+        local baseHeight = 36 + 45 + 36 -- Title(36) + TopPad(45) + InputBottom(36)
         local contentHeight = visibleCount * 44
         local targetHeight = math.min(Config.Height or 560, baseHeight + contentHeight)
         
@@ -8599,6 +8599,258 @@ function Library:CreateCommandBar(Config)
     end)
 
     return CommandBar
+end
+
+function Library:CreateChatLog(Config)
+    Config = Config or {}
+    Config.Title = Config.Title or "Chat Logs"
+    Config.Width = Config.Width or 400
+    Config.Height = Config.Height or 300
+
+    local ChatLog = {
+        IsToggled = false,
+        Messages = {},
+    }
+
+    local Main = New("Frame", {
+        BackgroundColor3 = "BackgroundColor",
+        Position = UDim2.new(0.5, -Config.Width / 2, 0.5, -Config.Height / 2),
+        Size = UDim2.fromOffset(Config.Width, Config.Height),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Visible = false,
+        Parent = Library.ScreenGui
+    })
+    
+    local UIScale = New("UIScale", {
+        Scale = 0.85,
+        Parent = Main
+    })
+    
+    local MainGroup = New("CanvasGroup", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        GroupTransparency = 1,
+        Parent = Main
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = MainGroup })
+    
+    Library:MakeDraggable(MainGroup, Main)
+
+    local TitleBar = New("Frame", {
+        BackgroundColor3 = "MainColor",
+        Size = UDim2.new(1, 0, 0, 36),
+        Parent = MainGroup
+    })
+    
+    Library:MakeLine(MainGroup, {
+        Position = UDim2.fromOffset(0, 36),
+        Size = UDim2.new(1, 0, 0, 1),
+        ZIndex = 2
+    })
+    
+    New("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -20, 1, 0),
+        Position = UDim2.fromOffset(10, 0),
+        Text = "<b>" .. Config.Title .. "</b>",
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
+        Parent = TitleBar
+    })
+
+    -- Search Bar Area (Optional filtering mechanism)
+    local SearchBox = New("TextBox", {
+        BackgroundColor3 = "BackgroundColor",
+        PlaceholderText = "Search chat...",
+        Position = UDim2.fromOffset(8, 44),
+        Size = UDim2.new(1, -16, 0, 30),
+        Text = "",
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ClearTextOnFocus = false,
+        Parent = MainGroup
+    })
+    
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = SearchBox })
+    
+    local SStroke = New("UIStroke", {
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        Color = "OutlineColor",
+        Thickness = 1,
+        Parent = SearchBox
+    })
+
+    New("UIPadding", {
+        PaddingBottom = UDim.new(0, 0),
+        PaddingLeft = UDim.new(0, 30),
+        PaddingRight = UDim.new(0, 30),
+        PaddingTop = UDim.new(0, 0),
+        Parent = SearchBox
+    })
+
+    local SearchIcon = Library:GetIcon("search")
+    if SearchIcon then
+        New("ImageLabel", {
+            BackgroundTransparency = 1,
+            Image = SearchIcon.Url,
+            ImageColor3 = "FontColor",
+            ImageRectOffset = SearchIcon.ImageRectOffset,
+            ImageRectSize = SearchIcon.ImageRectSize,
+            ImageTransparency = 0.5,
+            AnchorPoint = Vector2.new(0, 0.5),
+            Position = UDim2.new(0, -22, 0.5, 0),
+            Size = UDim2.fromOffset(16, 16),
+            Parent = SearchBox
+        })
+    end
+    
+    SearchBox.Focused:Connect(function()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = "AccentColor" }):Play()
+    end)
+    SearchBox.FocusLost:Connect(function()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = "OutlineColor" }):Play()
+    end)
+    
+    Library:MakeLine(MainGroup, {
+        Position = UDim2.fromOffset(0, 80),
+        Size = UDim2.new(1, 0, 0, 1),
+        ZIndex = 2
+    })
+    
+    local LogScroll = New("ScrollingFrame", {
+        BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(0, 81),
+        Size = UDim2.new(1, 0, 1, -81),
+        ScrollBarThickness = 3,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.fromScale(0, 0),
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        ScrollBarImageColor3 = "AccentColor",
+        Parent = MainGroup
+    })
+    
+    New("UIPadding", {
+        PaddingBottom = UDim.new(0, 5),
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8),
+        PaddingTop = UDim.new(0, 5),
+        Parent = LogScroll
+    })
+
+    local listLayout = New("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2),
+        Parent = LogScroll
+    })
+    
+    local function GetTimeFormat()
+        local date = os.date("*t")
+        return string.format("[%02d:%02d:%02d]", date.hour, date.min, date.sec)
+    end
+    
+    local function ToColorTag(color)
+        return string.format('rgb(%d, %d, %d)', color.R * 255, color.G * 255, color.B * 255)
+    end
+    
+    function ChatLog:AddMessage(Speaker, Message, TeamColor)
+        local timeTag = "<font color='rgb(130, 130, 130)'>" .. GetTimeFormat() .. "</font>"
+        local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
+        
+        local msgLbl = New("TextLabel", {
+            BackgroundTransparency = 1,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            TextWrapped = true,
+            Text = timeTag .. " [" .. nameTag .. "]: " .. Message,
+            TextSize = 13,
+            RichText = true,
+            Parent = LogScroll,
+            LayoutOrder = #ChatLog.Messages + 1
+        })
+        
+        table.insert(ChatLog.Messages, {
+            lbl = msgLbl,
+            speaker = Speaker:lower(),
+            msg = Message:lower()
+        })
+        
+        -- Auto scroll functionality
+        task.defer(function()
+            -- Check if user is scrolled near bottom
+            local isAtBottom = (LogScroll.CanvasPosition.Y >= LogScroll.AbsoluteCanvasSize.Y - LogScroll.AbsoluteWindowSize.Y - 20)
+            if isAtBottom or #ChatLog.Messages == 1 then
+                LogScroll.CanvasPosition = Vector2.new(0, LogScroll.AbsoluteCanvasSize.Y)
+            end
+        end)
+    end
+    
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local query = SearchBox.Text:lower():match("^%s*(.-)%s*$")
+        for _, tbl in ipairs(ChatLog.Messages) do
+            if query == "" then
+                tbl.lbl.Visible = true
+            else
+                if tbl.speaker:match(query, 1, true) or tbl.msg:match(query, 1, true) then
+                    tbl.lbl.Visible = true
+                else
+                    tbl.lbl.Visible = false
+                end
+            end
+        end
+        -- Auto scroll down to view results on search reset
+        LogScroll.CanvasPosition = Vector2.new(0, LogScroll.AbsoluteCanvasSize.Y)
+    end)
+    
+    function ChatLog:Toggle(forced)
+        local State = (forced ~= nil) and forced or not ChatLog.IsToggled
+        ChatLog.IsToggled = State
+        
+        if State then
+            Main.Visible = true
+            local OpenTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+            TweenService:Create(UIScale, OpenTweenInfo, { Scale = 1 }):Play()
+            TweenService:Create(MainGroup, OpenTweenInfo, { GroupTransparency = 0 }):Play()
+        else
+            local CloseTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+            TweenService:Create(UIScale, CloseTweenInfo, { Scale = 0.95 }):Play()
+            local closeTween = TweenService:Create(MainGroup, CloseTweenInfo, { GroupTransparency = 1 })
+            closeTween:Play()
+            
+            closeTween.Completed:Once(function()
+                if not ChatLog.IsToggled then
+                    Main.Visible = false
+                end
+            end)
+        end
+    end
+    
+    -- Connection handlers for Roblox Chat
+    local Players = game:GetService("Players")
+    -- Supports legacy Chat system for wide compatibility since TextChatService bypasses are complex
+    for _, plr in pairs(Players:GetPlayers()) do
+        plr.Chatted:Connect(function(msg)
+            local color = nil
+            if plr.Team then
+                color = plr.TeamColor.Color
+            end
+            ChatLog:AddMessage(plr.Name, msg, color)
+        end)
+    end
+    
+    Players.PlayerAdded:Connect(function(plr)
+        plr.Chatted:Connect(function(msg)
+            local color = nil
+            if plr.Team then
+                color = plr.TeamColor.Color
+            end
+            ChatLog:AddMessage(plr.Name, msg, color)
+        end)
+    end)
+
+    return ChatLog
 end
 
 getgenv().Library = Library
