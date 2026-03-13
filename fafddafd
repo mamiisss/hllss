@@ -8933,28 +8933,17 @@ function Library:CreateChatLog(Config)
     end)
 
     local function SendChatMessage(msg)
-        -- Method 1: firechatmessage (most exploits)
-        if firechatmessage then
-            firechatmessage(msg)
+        local TextChatService = game:GetService("TextChatService")
+        local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+        if channel then
+            channel:SendAsync(msg)
             return
         end
-
-        -- Method 2: TextChatService (new Roblox chat)
-        local ok1 = pcall(function()
-            local TCS = game:GetService("TextChatService")
-            if TCS.ChatVersion == Enum.ChatVersion.TextChatService then
-                local ch = TCS:FindFirstChild("TextChannels") and TCS.TextChannels:FindFirstChild("RBXGeneral")
-                if ch then ch:SendAsync(msg) end
-            end
-        end)
-        if ok1 then return end
         
-        -- Method 3: Legacy chat
-        pcall(function()
-            local RS = game:GetService("ReplicatedStorage")
-            local ev = RS:FindFirstChild("DefaultChatSystemChatEvents") and RS.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
-            if ev then ev:FireServer(msg, "All") end
-        end)
+        -- Legacy fallback
+        local RS = game:GetService("ReplicatedStorage")
+        local ev = RS:FindFirstChild("DefaultChatSystemChatEvents") and RS.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
+        if ev then ev:FireServer(msg, "All") end
     end
 
     ChatInput.FocusLost:Connect(function(enter)
