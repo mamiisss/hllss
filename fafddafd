@@ -8627,6 +8627,8 @@ function Library:CreateChatLog(Config)
         Scale = 0.85,
         Parent = Main
     })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = Main })
+    Library:AddOutline(Main)
     
     local MainGroup = New("CanvasGroup", {
         BackgroundTransparency = 1,
