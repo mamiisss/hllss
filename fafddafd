@@ -8473,13 +8473,32 @@ function Library:CreateCommandBar(Config)
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTruncate = Enum.TextTruncate.AtEnd,
             Position = UDim2.fromOffset(12, 28),
-            Size = UDim2.new(1, -80, 0, 16),
+            Size = UDim2.new(1, -90, 0, 16),
             Text = entry.desc,
             TextSize = 11,
             RichText = false,
             TextTransparency = 0.5,
             Parent = wrapper
         })
+
+        -- Category badge (only show if not OTHER/nil)
+        local badgeKey = (entry.badge or "OTHER"):upper()
+        local badgeColor = BADGE_COLORS[badgeKey] or BADGE_COLORS.OTHER
+        if badgeKey ~= "OTHER" then
+            local badge = New("TextLabel", {
+                BackgroundColor3 = badgeColor,
+                AnchorPoint = Vector2.new(1, 0.5),
+                Position = UDim2.new(1, -12, 0.5, 0),
+                Size = UDim2.fromOffset(60, 22),
+                Text = "<b>" .. badgeKey .. "</b>",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 10,
+                RichText = true,
+                BackgroundTransparency = 0,
+                Parent = wrapper
+            })
+            New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = badge })
+        end
         
         local function fillSearch()
             SearchBox.Text = entry.names[1]
