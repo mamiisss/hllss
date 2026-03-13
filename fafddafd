@@ -8338,10 +8338,10 @@ function Library:CreateCommandBar(Config)
     })
 
     SearchBox.Focused:Connect(function()
-        TweenService:Create(SStroke, Library.TweenInfo, { Color = "AccentColor" }):Play()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["AccentColor"] }):Play()
     end)
     SearchBox.FocusLost:Connect(function()
-        TweenService:Create(SStroke, Library.TweenInfo, { Color = "OutlineColor" }):Play()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["OutlineColor"] }):Play()
     end)
 
     local ListScroll = New("ScrollingFrame", {
@@ -8670,12 +8670,12 @@ function Library:CreateChatLog(Config)
         Parent = TitleBar
     })
 
-    ClearBtn.MouseEnter:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end)
-    ClearBtn.MouseLeave:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end)
+    ClearBtn.MouseEnter:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["AccentColor"], ImageTransparency = 0}):Play() end)
+    ClearBtn.MouseLeave:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["FontColor"], ImageTransparency = 0.5}):Play() end)
     Library:AddTooltip("Clear Chat", "Clear Chat", ClearBtn)
     
-    ExportBtn.MouseEnter:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end)
-    ExportBtn.MouseLeave:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end)
+    ExportBtn.MouseEnter:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["AccentColor"], ImageTransparency = 0}):Play() end)
+    ExportBtn.MouseLeave:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["FontColor"], ImageTransparency = 0.5}):Play() end)
     Library:AddTooltip("Export Chat to Workspace", "Export Chat to Workspace", ExportBtn)
     
     local TranslateIcon = Library:GetIcon("globe")
@@ -8712,14 +8712,14 @@ function Library:CreateChatLog(Config)
 
     local function UpdateTranslateIcon()
         if ChatLog.TranslateToggled then
-            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play()
+            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["AccentColor"], ImageTransparency = 0}):Play()
         else
-            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play()
+            TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["FontColor"], ImageTransparency = 0.5}):Play()
         end
     end
 
     TranslateBtn.MouseEnter:Connect(function() 
-        if not ChatLog.TranslateToggled then TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end
+        if not ChatLog.TranslateToggled then TweenService:Create(TranslateBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["AccentColor"], ImageTransparency = 0}):Play() end
     end)
     TranslateBtn.MouseLeave:Connect(function() 
         UpdateTranslateIcon()
@@ -8741,8 +8741,8 @@ function Library:CreateChatLog(Config)
         LangBtn.Text = "[" .. Languages[LangIndex] .. "]"
         ChatLog.TargetLang = Languages[LangIndex]:lower()
     end)
-    LangBtn.MouseEnter:Connect(function() TweenService:Create(LangBtn, Library.TweenInfo, {TextColor3 = "AccentColor"}):Play() end)
-    LangBtn.MouseLeave:Connect(function() TweenService:Create(LangBtn, Library.TweenInfo, {TextColor3 = "FontColor"}):Play() end)
+    LangBtn.MouseEnter:Connect(function() TweenService:Create(LangBtn, Library.TweenInfo, {TextColor3 = Library.Scheme["AccentColor"]}):Play() end)
+    LangBtn.MouseLeave:Connect(function() TweenService:Create(LangBtn, Library.TweenInfo, {TextColor3 = Library.Scheme["FontColor"]}):Play() end)
     Library:AddTooltip("Cycle Target Language", "Click to change language", LangBtn)
 
     Library:MakeLine(MainGroup, {
@@ -8809,10 +8809,10 @@ function Library:CreateChatLog(Config)
     end
     
     SearchBox.Focused:Connect(function()
-        TweenService:Create(SStroke, Library.TweenInfo, { Color = "AccentColor" }):Play()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["AccentColor"] }):Play()
     end)
     SearchBox.FocusLost:Connect(function()
-        TweenService:Create(SStroke, Library.TweenInfo, { Color = "OutlineColor" }):Play()
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["OutlineColor"] }):Play()
     end)
     
     Library:MakeLine(MainGroup, {
@@ -8913,8 +8913,8 @@ function Library:CreateChatLog(Config)
     New("UICorner", { CornerRadius = UDim.new(0, 100), Parent = JumpBtn })
     New("UIStroke", { ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Color = "OutlineColor", Thickness = 1, Parent = JumpBtn })
     
-    JumpBtn.MouseEnter:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = "AccentColor"}):Play() end)
-    JumpBtn.MouseLeave:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = "FontColor"}):Play() end)
+    JumpBtn.MouseEnter:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["AccentColor"]}):Play() end)
+    JumpBtn.MouseLeave:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = Library.Scheme["FontColor"]}):Play() end)
     Library:AddTooltip("Jump to Present", "Jump to Present", JumpBtn)
 
     JumpBtn.MouseButton1Click:Connect(function()
