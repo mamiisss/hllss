@@ -8516,10 +8516,10 @@ function Library:CreateCommandBar(Config)
             })
             badgeCorner = New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = badgeHolder })
             New("UIPadding", {
-                PaddingLeft   = UDim.new(0, 14),
-                PaddingRight  = UDim.new(0, 14),
-                PaddingTop    = UDim.new(0, 7),
-                PaddingBottom = UDim.new(0, 7),
+                PaddingLeft   = UDim.new(0, 10),
+                PaddingRight  = UDim.new(0, 10),
+                PaddingTop    = UDim.new(0, 5),
+                PaddingBottom = UDim.new(0, 5),
                 Parent = badgeHolder
             })
 
@@ -8565,8 +8565,8 @@ function Library:CreateCommandBar(Config)
                 Size = UDim2.fromOffset(0, 0),
                 Text = badgeKey,
                 TextColor3 = badgeColor,
-                TextTransparency = 0.35,
-                TextSize = 13,
+                TextTransparency = 0.1,
+                TextSize = 11,
                 Font = Enum.Font.GothamBold,
                 Parent = badgeHolder
             })
@@ -8582,7 +8582,7 @@ function Library:CreateCommandBar(Config)
             btn.MouseLeave:Connect(function()
                 TweenService:Create(badgeStroke, badgeTweenOut, { Transparency = 0.5, Thickness = 1.2 }):Play()
                 TweenService:Create(badgeGlow, badgeTweenOut, { Thickness = 0, Transparency = 0.7 }):Play()
-                TweenService:Create(badgeLabel, badgeTweenOut, { TextTransparency = 0.35 }):Play()
+                TweenService:Create(badgeLabel, badgeTweenOut, { TextTransparency = 0.1 }):Play()
                 TweenService:Create(badgeScale, badgeTweenOut, { Scale = 1 }):Play()
             end)
 
@@ -8714,7 +8714,7 @@ function Library:CreateCommandBar(Config)
                         -- Reset others
                         TweenService:Create(re.badgeStroke, badgeTweenOut, { Transparency = 0.5, Thickness = 1.2 }):Play()
                         TweenService:Create(re.badgeGlow, badgeTweenOut, { Thickness = 0, Transparency = 0.7 }):Play()
-                        TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.35 }):Play()
+                        TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.1 }):Play()
                         TweenService:Create(re.badgeScale, badgeTweenOut, { Scale = 1 }):Play()
                     end
                 end
@@ -8725,7 +8725,7 @@ function Library:CreateCommandBar(Config)
                 if re.badgeHolder then
                     TweenService:Create(re.badgeStroke, badgeTweenOut, { Transparency = 0.5, Thickness = 1.2 }):Play()
                     TweenService:Create(re.badgeGlow, badgeTweenOut, { Thickness = 0, Transparency = 0.7 }):Play()
-                    TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.35 }):Play()
+                    TweenService:Create(re.badgeLabel, badgeTweenOut, { TextTransparency = 0.1 }):Play()
                     TweenService:Create(re.badgeScale, badgeTweenOut, { Scale = 1 }):Play()
                 end
             end
