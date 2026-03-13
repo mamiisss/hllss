@@ -8292,7 +8292,7 @@ function Library:CreateCommandBar(Config)
         Size = UDim2.new(1, -16, 0, 30),
         Text = "",
         TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        TextXAlignment = Enum.TextXAlignment.Center,
         ClearTextOnFocus = false,
         Parent = MainGroup
     })
@@ -8309,7 +8309,7 @@ function Library:CreateCommandBar(Config)
     New("UIPadding", {
         PaddingBottom = UDim.new(0, 0),
         PaddingLeft = UDim.new(0, 30),
-        PaddingRight = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 30),
         PaddingTop = UDim.new(0, 0),
         Parent = SearchBox
     })
@@ -8404,7 +8404,7 @@ function Library:CreateCommandBar(Config)
         Size = UDim2.new(1, -36, 1, 0),
         Text = "",
         TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        TextXAlignment = Enum.TextXAlignment.Center,
         ClearTextOnFocus = true,
         Parent = InputBar
     })
@@ -8498,6 +8498,8 @@ function Library:CreateCommandBar(Config)
 
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower():match("^%s*(.-)%s*$")
+        local visibleCount = 0
+
         for _, re in ipairs(CommandBar.RowEntries) do
             local matchScore = -1
             if query == "" then
@@ -8527,9 +8529,11 @@ function Library:CreateCommandBar(Config)
             end
             
             re.wrapper.Visible = (matchScore >= 0)
+            if matchScore >= 0 then
+                visibleCount = visibleCount + 1
+            end
             
             -- If we are searching, modify layout order based on exactness. 
-            -- Matchscore ranges from 0-3. Higher score should be lower layout order (top).
             if query ~= "" then
                 re.wrapper.LayoutOrder = 100 - matchScore
             else
@@ -8537,6 +8541,15 @@ function Library:CreateCommandBar(Config)
                 re.wrapper.LayoutOrder = table.find(CommandBar.AllEntries, re.entry) or 0
             end
         end
+
+        local baseHeight = 36 + 45 + 36 -- Title(36) + TopPad(45) + InputBottom(36)
+        local contentHeight = visibleCount * 44
+        local targetHeight = math.min(Config.Height or 560, baseHeight + contentHeight)
+        
+        TweenService:Create(Main, Library.TweenInfo, {
+            Size = UDim2.fromOffset(Config.Width or 340, targetHeight)
+        }):Play()
+
     end)
     
     local function RunCmd(raw)
