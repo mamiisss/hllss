@@ -8825,7 +8825,7 @@ function Library:CreateChatLog(Config)
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 81),
         Size = UDim2.new(1, 0, 1, -117), -- 81px top + 36px bottom input
-        ScrollBarThickness = 3,
+        ScrollBarThickness = 0,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
@@ -8843,7 +8843,7 @@ function Library:CreateChatLog(Config)
 
     local listLayout = New("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 2),
+        Padding = UDim.new(0, 4),
         Parent = LogScroll
     })
     
@@ -8933,26 +8933,28 @@ function Library:CreateChatLog(Config)
     end)
 
     local function SendChatMessage(msg)
-        local TextChatService = game:GetService("TextChatService")
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local Players = game:GetService("Players")
+        -- Method 1: firechatmessage (most exploits)
+        if firechatmessage then
+            firechatmessage(msg)
+            return
+        end
 
-        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-            local textChannels = TextChatService:FindFirstChild("TextChannels")
-            if textChannels then
-                local channel = textChannels:FindFirstChild("RBXGeneral")
-                if channel then
-                    channel:SendAsync(msg)
-                    return
-                end
+        -- Method 2: TextChatService (new Roblox chat)
+        local ok1 = pcall(function()
+            local TCS = game:GetService("TextChatService")
+            if TCS.ChatVersion == Enum.ChatVersion.TextChatService then
+                local ch = TCS:FindFirstChild("TextChannels") and TCS.TextChannels:FindFirstChild("RBXGeneral")
+                if ch then ch:SendAsync(msg) end
             end
-        end
+        end)
+        if ok1 then return end
         
-        -- Legacy Fallback
-        local SayMsg = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") and ReplicatedStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
-        if SayMsg then 
-            SayMsg:FireServer(msg, "All") 
-        end
+        -- Method 3: Legacy chat
+        pcall(function()
+            local RS = game:GetService("ReplicatedStorage")
+            local ev = RS:FindFirstChild("DefaultChatSystemChatEvents") and RS.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
+            if ev then ev:FireServer(msg, "All") end
+        end)
     end
 
     ChatInput.FocusLost:Connect(function(enter)
@@ -9053,11 +9055,19 @@ function Library:CreateChatLog(Config)
             AutomaticSize = Enum.AutomaticSize.Y,
             TextWrapped = true,
             Text = timeTag .. " [" .. nameTag .. "]: " .. displayMsg,
-            TextSize = 13,
+            TextSize = 14,
             RichText = true,
             Parent = LogScroll,
             LayoutOrder = #ChatLog.Messages + 1
         })
+        New("UIPadding", {
+            PaddingTop = UDim.new(0, 3),
+            PaddingBottom = UDim.new(0, 3),
+            PaddingLeft = UDim.new(0, 4),
+            PaddingRight = UDim.new(0, 4),
+            Parent = msgBtn
+        })
+        New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = msgBtn })
         
         msgBtn.MouseButton1Click:Connect(function()
             if setclipboard then
