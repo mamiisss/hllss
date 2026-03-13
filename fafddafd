@@ -8542,11 +8542,12 @@ function Library:CreateCommandBar(Config)
             end
         end
 
-        local baseHeight = 36 + 45 + 36 -- Title(36) + TopPad(45) + InputBottom(36)
+        local baseHeight = 36 + 45 + 36 + 5 -- Title(36) + TopPad(45) + InputBottom(36) + BottomPad(5)
         local contentHeight = visibleCount * 44
         local targetHeight = math.min(Config.Height or 560, baseHeight + contentHeight)
         
-        TweenService:Create(Main, Library.TweenInfo, {
+        local SearchTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        TweenService:Create(Main, SearchTweenInfo, {
             Size = UDim2.fromOffset(Config.Width or 340, targetHeight)
         }):Play()
 
