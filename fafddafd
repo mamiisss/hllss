@@ -8347,7 +8347,7 @@ function Library:CreateCommandBar(Config)
     local ListScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 81),
-        Size = UDim2.new(1, 0, 1, -117), -- 81px top offset + 36px bottom input
+        Size = UDim2.new(1, 0, 1, -127), -- 81px top offset + 46px bottom input
         ScrollBarThickness = 0,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
@@ -8369,40 +8369,61 @@ function Library:CreateCommandBar(Config)
     })
 
     local InputBar = New("Frame", {
-        BackgroundColor3 = "MainColor",
+        BackgroundTransparency = 1,
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, 36),
+        Size = UDim2.new(1, 0, 0, 46),
         ClipsDescendants = true,
         Parent = MainGroup
     })
 
-    local listLayout = New("UIListLayout", {
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = ListScroll
+    local CmdInput = New("TextBox", {
+        BackgroundColor3 = "MainColor",
+        PlaceholderText = "Type a command...",
+        Position = UDim2.new(0, 8, 0, 8),
+        Size = UDim2.new(1, -16, 1, -16),
+        Text = "",
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ClearTextOnFocus = false,
+        Parent = InputBar
+    })
+    
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = CmdInput })
+    
+    local CStroke = New("UIStroke", {
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        Color = "OutlineColor",
+        Thickness = 1,
+        Parent = CmdInput
+    })
+
+    New("UIPadding", {
+        PaddingBottom = UDim.new(0, 0),
+        PaddingLeft = UDim.new(0, 30),
+        PaddingRight = UDim.new(0, 8),
+        PaddingTop = UDim.new(0, 0),
+        Parent = CmdInput
     })
 
     local promptLbl = New("TextLabel", {
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(24, 36),
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 10, 0.5, 0),
+        Size = UDim2.fromOffset(16, 16),
         Text = "&gt;",
         TextColor3 = "AccentColor",
         TextSize = 14,
         RichText = true,
-        Parent = InputBar
+        Parent = CmdInput
     })
 
-    local CmdInput = New("TextBox", {
-        BackgroundTransparency = 1,
-        PlaceholderText = "Type a command and press Enter...",
-        Position = UDim2.fromOffset(24, 0),
-        Size = UDim2.new(1, -28, 1, 0),
-        Text = "",
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ClearTextOnFocus = true,
-        Parent = InputBar
-    })
+    CmdInput.Focused:Connect(function()
+        TweenService:Create(CStroke, Library.TweenInfo, { Color = "AccentColor" }):Play()
+    end)
+    CmdInput.FocusLost:Connect(function()
+        TweenService:Create(CStroke, Library.TweenInfo, { Color = "OutlineColor" }):Play()
+    end)
 
 
     function CommandBar:AddCommand(CmdInfo)
