@@ -8766,7 +8766,7 @@ function Library:CreateChatLog(Config)
 
     -- Search Bar Area (Optional filtering mechanism)
     local SearchBox = New("TextBox", {
-        BackgroundColor3 = "SectionColor",
+        BackgroundColor3 = "MainColor",
         PlaceholderText = "Search chat...",
         Position = UDim2.fromOffset(8, 44),
         Size = UDim2.new(1, -16, 0, 30),
