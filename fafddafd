@@ -8278,10 +8278,11 @@ function Library:CreateCommandBar(Config)
         Size = UDim2.fromOffset(100, 36),
         AnchorPoint = Vector2.new(1, 0),
         Position = UDim2.new(1, -10, 0, 0),
-        Text = "0 Commands",
+        Text = "",
         TextColor3 = "AccentColor",
         TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Right,
+        RichText = true,
         Parent = TitleBar
     })
       local SearchBox = New("TextBox", {
@@ -8488,7 +8489,7 @@ function Library:CreateCommandBar(Config)
         CommandBar:AddCommand(cmd)
     end
     
-    CountLbl.Text = tostring(#CommandBar.AllEntries) .. " Commands"
+    CountLbl.Text = "<b>" .. tostring(#CommandBar.AllEntries) .. "</b> Commands"
 
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower():match("^%s*(.-)%s*$")
