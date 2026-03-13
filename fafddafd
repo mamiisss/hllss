@@ -8642,6 +8642,42 @@ function Library:CreateChatLog(Config)
     
     Library:MakeDraggable(Main, TitleBar)
     
+    local TrashIcon = Library:GetIcon("trash")
+    local ClearBtn = New("ImageButton", {
+        BackgroundTransparency = 1,
+        Image = TrashIcon.Url,
+        ImageColor3 = "FontColor",
+        ImageRectOffset = TrashIcon.ImageRectOffset,
+        ImageRectSize = TrashIcon.ImageRectSize,
+        ImageTransparency = 0.5,
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -12, 0.5, 0),
+        Size = UDim2.fromOffset(16, 16),
+        Parent = TitleBar
+    })
+
+    local DownloadIcon = Library:GetIcon("download")
+    local ExportBtn = New("ImageButton", {
+        BackgroundTransparency = 1,
+        Image = DownloadIcon.Url,
+        ImageColor3 = "FontColor",
+        ImageRectOffset = DownloadIcon.ImageRectOffset,
+        ImageRectSize = DownloadIcon.ImageRectSize,
+        ImageTransparency = 0.5,
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -36, 0.5, 0),
+        Size = UDim2.fromOffset(16, 16),
+        Parent = TitleBar
+    })
+
+    ClearBtn.MouseEnter:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end)
+    ClearBtn.MouseLeave:Connect(function() TweenService:Create(ClearBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end)
+    Library:AddTooltip(ClearBtn, "Clear Chat")
+    
+    ExportBtn.MouseEnter:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = "AccentColor", ImageTransparency = 0}):Play() end)
+    ExportBtn.MouseLeave:Connect(function() TweenService:Create(ExportBtn, Library.TweenInfo, {ImageColor3 = "FontColor", ImageTransparency = 0.5}):Play() end)
+    Library:AddTooltip(ExportBtn, "Export Chat to Workspace")
+    
     Library:MakeLine(MainGroup, {
         Position = UDim2.fromOffset(0, 36),
         Size = UDim2.new(1, 0, 0, 1),
@@ -8744,6 +8780,48 @@ function Library:CreateChatLog(Config)
         Parent = LogScroll
     })
     
+    local JumpBox = New("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(24, 24),
+        Position = UDim2.new(1, -36, 1, -24),
+        AnchorPoint = Vector2.new(1, 1),
+        Visible = false,
+        Parent = MainGroup
+    })
+    
+    local DownIcon = Library:GetIcon("chevron-down")
+    local JumpBtn = New("ImageButton", {
+        BackgroundColor3 = "MainColor",
+        Image = DownIcon.Url,
+        ImageColor3 = "FontColor",
+        ImageRectOffset = DownIcon.ImageRectOffset,
+        ImageRectSize = DownIcon.ImageRectSize,
+        ImageTransparency = 0.2,
+        Size = UDim2.fromScale(1, 1),
+        Parent = JumpBox
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, 100), Parent = JumpBtn })
+    New("UIStroke", { ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Color = "OutlineColor", Thickness = 1, Parent = JumpBtn })
+    
+    JumpBtn.MouseEnter:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = "AccentColor"}):Play() end)
+    JumpBtn.MouseLeave:Connect(function() TweenService:Create(JumpBtn, Library.TweenInfo, {ImageColor3 = "FontColor"}):Play() end)
+    Library:AddTooltip(JumpBtn, "Jump to Present")
+
+    JumpBtn.MouseButton1Click:Connect(function()
+        TweenService:Create(LogScroll, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            CanvasPosition = Vector2.new(0, LogScroll.AbsoluteCanvasSize.Y)
+        }):Play()
+    end)
+
+    LogScroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+        local isAtBottom = (LogScroll.CanvasPosition.Y >= LogScroll.AbsoluteCanvasSize.Y - LogScroll.AbsoluteWindowSize.Y - 20)
+        JumpBox.Visible = not isAtBottom and (#ChatLog.Messages > 0)
+    end)
+    LogScroll:GetPropertyChangedSignal("AbsoluteCanvasSize"):Connect(function()
+        local isAtBottom = (LogScroll.CanvasPosition.Y >= LogScroll.AbsoluteCanvasSize.Y - LogScroll.AbsoluteWindowSize.Y - 20)
+        JumpBox.Visible = not isAtBottom and (#ChatLog.Messages > 0)
+    end)
+
     local function GetTimeFormat()
         local date = os.date("*t")
         return string.format("[%02d:%02d:%02d]", date.hour, date.min, date.sec)
@@ -8754,10 +8832,25 @@ function Library:CreateChatLog(Config)
     end
     
     function ChatLog:AddMessage(Speaker, Message, TeamColor)
+        local lowerMsg = Message:lower()
+        local lowerSpk = Speaker:lower()
+        
+        -- Spam filtering check
+        local lastMsgData = ChatLog.Messages[#ChatLog.Messages]
+        if lastMsgData and lastMsgData.speaker == lowerSpk and lastMsgData.rawMsg == lowerMsg then
+            lastMsgData.count = lastMsgData.count + 1
+            local timeTag = "<font color='rgb(130, 130, 130)'>" .. GetTimeFormat() .. "</font>"
+            local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
+            local countTag = " <font color='rgb(150, 150, 150)'>(x" .. tostring(lastMsgData.count) .. ")</font>"
+            
+            lastMsgData.lbl.Text = timeTag .. " [" .. nameTag .. "]: " .. Message .. countTag
+            return
+        end
+
         local timeTag = "<font color='rgb(130, 130, 130)'>" .. GetTimeFormat() .. "</font>"
         local nameTag = "<font color='" .. ToColorTag(TeamColor or Color3.fromRGB(200, 200, 200)) .. "'>" .. Speaker .. "</font>"
         
-        local msgLbl = New("TextLabel", {
+        local msgBtn = New("TextButton", {
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Top,
@@ -8771,10 +8864,19 @@ function Library:CreateChatLog(Config)
             LayoutOrder = #ChatLog.Messages + 1
         })
         
+        msgBtn.MouseButton1Click:Connect(function()
+            if setclipboard then
+                setclipboard(Speaker .. ": " .. Message)
+                Library:Notify("Copied message!", 3)
+            end
+        end)
+        
         table.insert(ChatLog.Messages, {
-            lbl = msgLbl,
-            speaker = Speaker:lower(),
-            msg = Message:lower()
+            lbl = msgBtn,
+            speaker = lowerSpk,
+            msg = timeTag .. " [" .. nameTag .. "]: " .. lowerMsg,
+            rawMsg = lowerMsg,
+            count = 1
         })
         
         -- Auto scroll functionality
@@ -8786,6 +8888,28 @@ function Library:CreateChatLog(Config)
             end
         end)
     end
+    
+    ClearBtn.MouseButton1Click:Connect(function()
+        for _, tbl in ipairs(ChatLog.Messages) do
+            tbl.lbl:Destroy()
+        end
+        table.clear(ChatLog.Messages)
+        Library:Notify("Chat cleared.", 3)
+    end)
+    
+    ExportBtn.MouseButton1Click:Connect(function()
+        if writefile then
+            local str = "--- EISHA CHAT LOGS ---\n"
+            for _, tbl in ipairs(ChatLog.Messages) do
+                str = str .. "["..tbl.speaker.."]: " .. tbl.rawMsg .. (tbl.count > 1 and " (x"..tbl.count..")\n" or "\n")
+            end
+            local filename = "EishaLogs_" .. tostring(os.time()) .. ".txt"
+            writefile(filename, str)
+            Library:Notify("Saved to workspace: " .. filename, 4)
+        else
+            Library:Notify("Exploit does not support writefile.", 4)
+        end
+    end)
     
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = SearchBox.Text:lower():match("^%s*(.-)%s*$")
