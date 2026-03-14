@@ -8300,9 +8300,14 @@ function Library:CreateCommandBar(Config)
     end
 
     local TitleBar = New("Frame", {
-        BackgroundTransparency = 1,
+        BackgroundColor3 = "MainColor",
         Size = UDim2.new(1, 0, 0, 36),
         Parent = MainGroup
+    })
+    Library:MakeLine(MainGroup, {
+        Position = UDim2.fromOffset(0, 36),
+        Size = UDim2.new(1, 0, 0, 1),
+        ZIndex = 2
     })
 
     local TitleLbl = New("TextLabel", {
