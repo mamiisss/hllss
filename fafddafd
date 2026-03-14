@@ -8381,15 +8381,13 @@ function Library:CreateCommandBar(Config)
     SearchBox.Focused:Connect(function()
         TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["AccentColor"] }):Play()
     end)
-    SearchBox.FocusLost:Connect(function()
-        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["OutlineColor"] }):Play()
-    end)
+
 
 
     local ListScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(0, 0),
-        Size = UDim2.new(1, 0, 1, -36),
+        Size = UDim2.new(1, 0, 1, 0),
         ScrollBarThickness = 0,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
@@ -8401,56 +8399,10 @@ function Library:CreateCommandBar(Config)
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = ListScroll
     })
-    
-    -- Separator above the command input field
-    Library:MakeLine(BottomGroup, {
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 0, 1, -36),
-        Size = UDim2.new(1, 0, 0, 1),
-        ZIndex = 2
-    })
-
-    local InputBar = New("Frame", {
-        BackgroundColor3 = "MainColor",
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, 36),
-        ClipsDescendants = true,
-        Parent = BottomGroup
-    })
-
     local listLayout = New("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = ListScroll
     })
-
-    local ChevronIcon = Library:GetIcon("chevron-right")
-    if ChevronIcon then
-        New("ImageLabel", {
-            BackgroundTransparency = 1,
-            Image = ChevronIcon.Url,
-            ImageColor3 = "AccentColor",
-            ImageRectOffset = ChevronIcon.ImageRectOffset,
-            ImageRectSize = ChevronIcon.ImageRectSize,
-            AnchorPoint = Vector2.new(0, 0.5),
-            Position = UDim2.new(0, 8, 0.5, 0),
-            Size = UDim2.fromOffset(16, 16),
-            Parent = InputBar
-        })
-    end
-
-    local CmdInput = New("TextBox", {
-        BackgroundTransparency = 1,
-        PlaceholderText = "Execute command...",
-        Position = UDim2.fromOffset(28, 0),
-        Size = UDim2.new(1, -36, 1, 0),
-        Text = "",
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        ClearTextOnFocus = true,
-        Parent = InputBar
-    })
-
 
     function CommandBar:AddCommand(CmdInfo)
         local Names = CmdInfo.Names or {CmdInfo.Name}
@@ -8695,7 +8647,7 @@ function Library:CreateCommandBar(Config)
             end
         end
 
-        local baseHeight = 36 -- InputBottom(36)
+        local baseHeight = 0
         local contentHeight = visibleCount * 52
         local maxBottomHeight = (Config.Height or 560) - 80 - 8
         local targetHeight = math.min(maxBottomHeight, baseHeight + contentHeight)
@@ -8769,7 +8721,19 @@ function Library:CreateCommandBar(Config)
         local parts = {}
         for w in raw:gmatch("%S+") do parts[#parts+1] = w end
         local name = table.remove(parts, 1):lower()
-        local cmd = CommandBar.Commands[name]
+        
+        -- Try to find command by any of its names/aliases
+        local cmd = nil
+        for _, entry in pairs(CommandBar.Commands) do
+            for _, alias in ipairs(entry.names) do
+                if alias:lower() == name then
+                    cmd = entry
+                    break
+                end
+            end
+            if cmd then break end
+        end
+
         if not cmd then return false, 'Unknown command: "' .. name .. '"' end
         return cmd.fn(parts)
     end
@@ -8785,27 +8749,16 @@ function Library:CreateCommandBar(Config)
         end
     end
 
-    CmdInput.FocusLost:Connect(function(enter)
-        if not enter then return end
-        local raw = CmdInput.Text
-        CmdInput.Text = ""
-        handleExecute(raw)
-    end)
-    
     SearchBox.FocusLost:Connect(function(enter)
+        TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["OutlineColor"] }):Play()
         if not enter then return end
+        
         local raw = SearchBox.Text
         if raw:match("^%s*$") then return end
-        local cmd = CommandBar.Commands[raw:lower()]
-        if cmd then
-            local ok, msg = RunCmd(raw)
-            if ok then
-                Library:Notify(msg or "Success", 3.5)
-            else
-                Library:Notify(msg or "Error", 3.5)
-            end
-            SearchBox.Text = ""
-        end
+        
+        -- Execute
+        handleExecute(raw)
+        SearchBox.Text = ""
     end)
 
     return CommandBar
