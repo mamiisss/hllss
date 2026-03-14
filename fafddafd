@@ -8207,7 +8207,7 @@ function Library:CreateCommandBar(Config)
     local Main = New("Frame", {
         BackgroundColor3 = "BackgroundColor",
         Position = UDim2.fromOffset(6, 6),
-        Size = UDim2.fromOffset(Config.Width, Config.Height),
+        Size = UDim2.fromOffset(Config.Width, 80),
         Active = true,
         ClipsDescendants = true,
         Visible = false,
@@ -8248,17 +8248,22 @@ function Library:CreateCommandBar(Config)
         
         if CommandBar.Toggled then
             Main.Visible = true
+            BottomPanel.Visible = true
             MainScale.Scale = 0.85
             MainGroup.GroupTransparency = 1
+            BottomGroup.GroupTransparency = 1
             TweenService:Create(MainScale, Library.TweenInfo, { Scale = 1 }):Play()
             TweenService:Create(MainGroup, Library.TweenInfo, { GroupTransparency = 0 }):Play()
+            TweenService:Create(BottomGroup, Library.TweenInfo, { GroupTransparency = 0 }):Play()
         else
             TweenService:Create(MainScale, Library.TweenInfo, { Scale = 0.85 }):Play()
             local fadeOut = TweenService:Create(MainGroup, Library.TweenInfo, { GroupTransparency = 1 })
+            TweenService:Create(BottomGroup, Library.TweenInfo, { GroupTransparency = 1 }):Play()
             fadeOut:Play()
             fadeOut.Completed:Once(function()
                 if not CommandBar.Toggled then
                     Main.Visible = false
+                    BottomPanel.Visible = false
                 end
             end)
         end
@@ -8343,13 +8348,6 @@ function Library:CreateCommandBar(Config)
         })
     end
 
-    -- The horizontal cut below the Search (the red line user drew)
-    Library:MakeLine(MainGroup, {
-        Position = UDim2.fromOffset(0, 80),
-        Size = UDim2.new(1, 0, 0, 1),
-        ZIndex = 2
-    })
-
     SearchBox.Focused:Connect(function()
         TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["AccentColor"] }):Play()
     end)
@@ -8357,15 +8355,45 @@ function Library:CreateCommandBar(Config)
         TweenService:Create(SStroke, Library.TweenInfo, { Color = Library.Scheme["OutlineColor"] }):Play()
     end)
 
+    -- Bottom panel (separate frame for command list + execute bar)
+    local BottomPanel = New("Frame", {
+        BackgroundColor3 = "BackgroundColor",
+        Position = UDim2.fromOffset(6, 6 + 80 + 8),
+        Size = UDim2.fromOffset(Config.Width, Config.Height - 80 - 8),
+        Active = true,
+        ClipsDescendants = true,
+        Visible = false,
+        Parent = Library.ScreenGui
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = BottomPanel })
+    Library:AddOutline(BottomPanel)
+
+    local BottomGroup = New("CanvasGroup", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        GroupTransparency = 0,
+        Parent = BottomPanel
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = BottomGroup })
+
+    -- Sync BottomPanel position when Main is dragged
+    Main:GetPropertyChangedSignal("Position"):Connect(function()
+        local pos = Main.Position
+        BottomPanel.Position = UDim2.new(
+            pos.X.Scale, pos.X.Offset,
+            pos.Y.Scale, pos.Y.Offset + 80 + 8
+        )
+    end)
+
     local ListScroll = New("ScrollingFrame", {
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 81),
-        Size = UDim2.new(1, 0, 1, -81 - 36),
+        Position = UDim2.fromOffset(0, 0),
+        Size = UDim2.new(1, 0, 1, -36),
         ScrollBarThickness = 0,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.fromScale(0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        Parent = MainGroup
+        Parent = BottomGroup
     })
 
     local listLayout = New("UIListLayout", {
@@ -8374,7 +8402,7 @@ function Library:CreateCommandBar(Config)
     })
     
     -- Separator above the command input field
-    local inputSeparator = Library:MakeLine(MainGroup, {
+    Library:MakeLine(BottomGroup, {
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0, 0, 1, -36),
         Size = UDim2.new(1, 0, 0, 1),
@@ -8387,7 +8415,7 @@ function Library:CreateCommandBar(Config)
         Position = UDim2.fromScale(0, 1),
         Size = UDim2.new(1, 0, 0, 36),
         ClipsDescendants = true,
-        Parent = MainGroup
+        Parent = BottomGroup
     })
 
     local listLayout = New("UIListLayout", {
@@ -8666,12 +8694,13 @@ function Library:CreateCommandBar(Config)
             end
         end
 
-        local baseHeight = 36 + 45 + 36 -- Title(36) + TopPad(45) + InputBottom(36)
-        local contentHeight = visibleCount * 44
-        local targetHeight = math.min(Config.Height or 560, baseHeight + contentHeight)
+        local baseHeight = 36 -- InputBottom(36)
+        local contentHeight = visibleCount * 52
+        local maxBottomHeight = (Config.Height or 560) - 80 - 8
+        local targetHeight = math.min(maxBottomHeight, baseHeight + contentHeight)
         
         local SearchTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-        TweenService:Create(Main, SearchTweenInfo, {
+        TweenService:Create(BottomPanel, SearchTweenInfo, {
             Size = UDim2.fromOffset(Config.Width or 340, targetHeight)
         }):Play()
 
